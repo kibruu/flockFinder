@@ -1,0 +1,3 @@
+﻿# 0006: Server Components by Default and React 19 Architecture
+
+We decided that all pages, layouts, and data-fetching views will be React Server Components (RSC) by default, querying the database directly on the server without client-side API fetch waterfalls. The `'use client'` directive is strictly restricted to leaf interactive components (the Leaflet map canvas, modals/drawers, live chat input, and filter toggles). Furthermore, all Next.js App Router dynamic route parameters and search parameters must be handled as asynchronous promises (`await params`) in alignment with modern Next.js and React 19 conventions.

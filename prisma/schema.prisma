@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String
+  email         String    @unique
+  passwordHash  String
+  avatarUrl     String?
+  bio           String?
+  vehicleModel  String?
+  vehicleSeats  Int?
+  city          String?
+  badges        String    @default("[]")
+  createdAt     DateTime  @default(now())
+
+  hostedTrips       Trip[]             @relation("TripHost")
+  carpoolOffers     CarpoolOffer[]     @relation("CarpoolDriver")
+  carpoolBookings   CarpoolBooking[]   @relation("CarpoolPassenger")
+  tripRsvps         TripRsvp[]
+  sightings         Sighting[]
+  sentMessages      ChatMessage[]      @relation("MessageSender")
+  receivedMessages  ChatMessage[]      @relation("MessageRecipient")
+}
+
+model Species {
+  id                  String    @id @default(cuid())
+  commonName          String    @unique
+  scientificName      String
+  category            String
+  description         String?
+  habitat             String?
+  imageUrl            String?
+  audioUrl            String?
+  rarity              String
+  conservationStatus  String?
+
+  sightings Sighting[]
+}
+
+model Hotspot {
+  id            String    @id @default(cuid())
+  name          String    @unique
+  description   String?
+  locationName  String
+  latitude      Float
+  longitude     Float
+  habitatType   String
+  amenities     String?
+  coverImage    String?
+
+  trips     Trip[]
+  sightings Sighting[]
+  messages  ChatMessage[]
+}
+
+model Trip {
+  id                String      @id @default(cuid())
+  title             String
+  description       String?
+  hostId            String
+  hotspotId         String
+  date              DateTime
+  meetingTime       DateTime
+  meetingPoint      String
+  targetSpecies     String      @default("[]")
+  maxParticipants   Int?
+  status            String      @default("UPCOMING")
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  host          User           @relation("TripHost", fields: [hostId], references: [id])
+  hotspot       Hotspot        @relation(fields: [hotspotId], references: [id])
+  carpoolOffers CarpoolOffer[]
+  rsvps         TripRsvp[]
+  messages      ChatMessage[]
+  sightings     Sighting[]
+}
+
+model CarpoolOffer {
+  id              String               @id @default(cuid())
+  tripId          String
+  driverId        String
+  originArea      String
+  departureTime   DateTime
+  totalSeats      Int
+  availableSeats  Int
+  notes           String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  trip      Trip              @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  driver    User              @relation("CarpoolDriver", fields: [driverId], references: [id])
+  bookings  CarpoolBooking[]
+}
+
+model CarpoolBooking {
+  id          String                 @id @default(cuid())
+  offerId     String
+  passengerId String
+  status      String                 @default("CONFIRMED")
+  createdAt   DateTime               @default(now())
+
+  offer      CarpoolOffer  @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  passenger  User          @relation("CarpoolPassenger", fields: [passengerId], references: [id])
+
+  @@unique([offerId, passengerId])
+}
+
+model TripRsvp {
+  id        String        @id @default(cuid())
+  tripId    String
+  userId    String
+  role      String        @default("SELF_DRIVE")
+  createdAt DateTime      @default(now())
+
+  trip Trip @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tripId, userId])
+}
+
+model Sighting {
+  id          String    @id @default(cuid())
+  userId      String
+  speciesId   String
+  hotspotId   String
+  tripId      String?
+  count       Int       @default(1)
+  notes       String?
+  photoUrl    String?
+  latitude    Float
+  longitude   Float
+  spottedAt   DateTime  @default(now())
+
+  user     User     @relation(fields: [userId], references: [id])
+  species  Species  @relation(fields: [speciesId], references: [id])
+  hotspot  Hotspot  @relation(fields: [hotspotId], references: [id])
+  trip     Trip?    @relation(fields: [tripId], references: [id])
+}
+
+model ChatMessage {
+  id          String    @id @default(cuid())
+  senderId    String
+  tripId      String?
+  hotspotId   String?
+  recipientId String?
+  content     String
+  createdAt   DateTime  @default(now())
+
+  sender     User     @relation("MessageSender", fields: [senderId], references: [id])
+  trip       Trip?    @relation(fields: [tripId], references: [id])
+  hotspot    Hotspot? @relation(fields: [hotspotId], references: [id])
+  recipient  User?    @relation("MessageRecipient", fields: [recipientId], references: [id])
+}
