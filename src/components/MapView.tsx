@@ -5,6 +5,15 @@ import * as L from "leaflet";
 import "leaflet.markercluster";
 import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair } from "lucide-react";
 
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&")
+    .replace(/</g, "<")
+    .replace(/>/g, ">")
+    .replace(/"/g, "\"")
+    .replace(/'/g, "'");
+}
+
 export interface Hotspot {
   id: string;
   name: string;
@@ -284,15 +293,19 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         const marker = L.marker([hotspot.latitude, hotspot.longitude], {
           icon: createCustomIcon(color, "🦅"),
         });
+        const name = escapeHtml(hotspot.name);
+        const locationName = escapeHtml(hotspot.locationName);
+        const habitatType = escapeHtml(hotspot.habitatType);
+        const amenities = hotspot.amenities ? escapeHtml(hotspot.amenities) : null;
         const popupContent = `
           <div class="map-popup" style="min-width: 240px;">
             <div class="flex items-center gap-2 mb-2">
               <span style="font-size: 1.5rem;">🦅</span>
-              <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${hotspot.name}</h3>
+              <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${name}</h3>
             </div>
-            <p style="margin: 0 0 8px; color: #4a4a4a; font-size: 0.875rem;">${hotspot.locationName}</p>
-            <p style="margin: 0 0 8px; color: #64748b; font-size: 0.8rem;"><strong>Habitat:</strong> ${hotspot.habitatType}</p>
-            ${hotspot.amenities ? `<p style="margin: 0 0 8px; color: #64748b; font-size: 0.8rem;"><strong>Amenities:</strong> ${hotspot.amenities}</p>` : ""}
+            <p style="margin: 0 0 8px; color: #4a4a4a; font-size: 0.875rem;">${locationName}</p>
+            <p style="margin: 0 0 8px; color: #64748b; font-size: 0.8rem;"><strong>Habitat:</strong> ${habitatType}</p>
+            ${amenities ? `<p style="margin: 0 0 8px; color: #64748b; font-size: 0.8rem;"><strong>Amenities:</strong> ${amenities}</p>` : ""}
             <a href="/hotspots/${hotspot.id}" style="color: #14b8a6; font-weight: 500; text-decoration: none; font-size: 0.875rem;">View Details →</a>
           </div>
         `;
@@ -315,19 +328,25 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       const marker = L.marker([sighting.latitude, sighting.longitude], {
         icon: isUser ? createUserSightingIcon() : createCustomIcon(LAYER_COLORS.sightings, "📍"),
       });
-      const popupContent = `
+      const speciesName = escapeHtml(sighting.speciesName);
+        const sciName = escapeHtml(sighting.speciesScientificName);
+        const userName = escapeHtml(sighting.userName);
+        const hotspotName = escapeHtml(sighting.hotspotName);
+        const notes = sighting.notes ? escapeHtml(sighting.notes) : null;
+        const dateStr = new Date(sighting.spottedAt).toLocaleDateString();
+        const popupContent = `
         <div class="map-popup" style="min-width: 240px;">
           <div class="flex items-center gap-2 mb-2">
             <span style="font-size: 1.5rem;">📍</span>
-            <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${sighting.speciesName}</h3>
+            <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${speciesName}</h3>
             ${sighting.isCurrentUser ? '<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full">Your sighting</span>' : ""}
           </div>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem; font-style: italic;">${sighting.speciesScientificName}</p>
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem; font-style: italic;">${sciName}</p>
           <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Count:</strong> ${sighting.count}</p>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Observer:</strong> ${sighting.userName}</p>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Date:</strong> ${new Date(sighting.spottedAt).toLocaleDateString()}</p>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Location:</strong> ${sighting.hotspotName}</p>
-          ${sighting.notes ? `<p style="margin: 8px 0 0; color: #4a4a4a; font-size: 0.8rem; font-style: italic;">"${sighting.notes}"</p>` : ""}
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Observer:</strong> ${userName}</p>
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Date:</strong> ${dateStr}</p>
+          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Location:</strong> ${hotspotName}</p>
+          ${notes ? `<p style="margin: 8px 0 0; color: #4a4a4a; font-size: 0.8rem; font-style: italic;">"${notes}"</p>` : ""}
         </div>
       `;
       marker.bindPopup(popupContent, { maxWidth: 300 });
@@ -344,17 +363,22 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         const marker = L.marker([trip.hotspotLatitude, trip.hotspotLongitude], {
           icon: createCustomIcon(LAYER_COLORS.expeditions, "🚩", 36),
         });
-        const targetPreview = trip.targetSpecies.slice(0, 3).join(", ") + (trip.targetSpecies.length > 3 ? "..." : "");
+        const targetPreview = escapeHtml(trip.targetSpecies.slice(0, 3).join(", ") + (trip.targetSpecies.length > 3 ? "..." : ""));
+        const title = escapeHtml(trip.title);
+        const meetingPoint = escapeHtml(trip.meetingPoint);
+        const hostName = escapeHtml(trip.hostName);
+        const dateStr = new Date(trip.date).toLocaleDateString();
+        const timeStr = new Date(trip.meetingTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
         const popupContent = `
           <div class="map-popup" style="min-width: 240px;">
             <div class="flex items-center gap-2 mb-2">
               <span style="font-size: 1.5rem;">🚩</span>
-              <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${trip.title}</h3>
+              <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${title}</h3>
             </div>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Date:</strong> ${new Date(trip.date).toLocaleDateString()}</p>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Meet:</strong> ${new Date(trip.meetingTime).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>At:</strong> ${trip.meetingPoint}</p>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Host:</strong> ${trip.hostName}</p>
+            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Date:</strong> ${dateStr}</p>
+            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Meet:</strong> ${timeStr}</p>
+            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>At:</strong> ${meetingPoint}</p>
+            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Host:</strong> ${hostName}</p>
             <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Targets:</strong> ${targetPreview}</p>
             <a href="/trips/${trip.id}" style="color: #e11d48; font-weight: 500; text-decoration: none; font-size: 0.875rem;">Join Trip →</a>
           </div>
@@ -494,10 +518,8 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
               onChange={(e) => setFilters((prev) => ({ ...prev, dateRange: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
-              <option value="">All time</option>
               <option value="7">Last 7 days</option>
               <option value="30">Last 30 days</option>
-              <option value="90">Last 90 days</option>
             </select>
           </div>
         </div>
