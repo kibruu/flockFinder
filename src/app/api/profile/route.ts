@@ -45,7 +45,7 @@ export async function GET() {
       getLifeListCount(session.id),
     ]);
 
-    const speciesIds = lifeListSpecies.map((s) => s.speciesId);
+    const speciesIds = lifeListSpecies.map((s: { speciesId: string }) => s.speciesId);
     const speciesDetails = await db.species.findMany({
       where: { id: { in: speciesIds } },
       select: {
@@ -68,11 +68,11 @@ export async function GET() {
       distinct: ["speciesId"],
     });
 
-    const hotspotMap = new Map(hotspotDetails.map((s) => [s.speciesId, s.hotspot.name]));
-    const dateMap = new Map(hotspotDetails.map((s) => [s.speciesId, s.spottedAt]));
+    const hotspotMap = new Map(hotspotDetails.map((s: { speciesId: string; hotspot: { name: string } }) => [s.speciesId, s.hotspot.name]));
+    const dateMap = new Map(hotspotDetails.map((s: { speciesId: string; spottedAt: Date }) => [s.speciesId, s.spottedAt]));
 
-    const lifeList = lifeListSpecies.map((s) => {
-      const details = speciesDetails.find((sp) => sp.id === s.speciesId);
+    const lifeList = lifeListSpecies.map((s: { speciesId: string; _count: { speciesId: number } }) => {
+      const details = speciesDetails.find((sp: { id: string }) => sp.id === s.speciesId);
       return {
         id: s.speciesId,
         commonName: details?.commonName || "Unknown",
@@ -80,7 +80,7 @@ export async function GET() {
         category: details?.category || "",
         imageUrl: details?.imageUrl || null,
         sightingCount: s._count.speciesId,
-        lastSpotted: dateMap.get(s.speciesId)?.toISOString() || new Date().toISOString(),
+        lastSpotted: (dateMap.get(s.speciesId) as Date | undefined)?.toISOString() || new Date().toISOString(),
         hotspotName: hotspotMap.get(s.speciesId) || "Unknown location",
       };
     });
