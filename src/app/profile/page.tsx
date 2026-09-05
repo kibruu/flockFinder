@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Zap, User, Car, Award, Eye, MapPin, Feather, Settings, LogOut, ChevronRight, Camera, Plus } from "lucide-react";
+import { Zap, User, Car, Award, Eye, MapPin, Feather, Settings, LogOut, ChevronRight, Camera, Plus, RefreshCw, AlertCircle } from "lucide-react";
 import { useSession } from "@/hooks/useAuth";
 
 interface LifeListSpecies {
@@ -44,6 +44,7 @@ export default function ProfilePage() {
   const { user, loading, setUser } = useSession();
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [dataLoading, setDataLoading] = useState(true);
+  const [profileError, setProfileError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"overview" | "lifelist" | "vehicle" | "badges">("overview");
   const [editing, setEditing] = useState(false);
   const [editData, setEditData] = useState({
@@ -79,14 +80,18 @@ export default function ProfilePage() {
   }, [user, editing]);
 
   const fetchProfile = async () => {
+    setProfileError(null);
     try {
       const res = await fetch("/api/profile");
       if (res.ok) {
         const data = await res.json();
         setProfileData(data);
+      } else {
+        setProfileError("Failed to load profile");
       }
     } catch (error) {
       console.error("Failed to fetch profile:", error);
+      setProfileError("Network error");
     } finally {
       setDataLoading(false);
     }
@@ -104,9 +109,13 @@ export default function ProfilePage() {
         setUser(data.user);
         setEditing(false);
         fetchProfile();
+      } else {
+        const error = await res.json();
+        alert(error.error || "Failed to save");
       }
     } catch (error) {
       console.error("Failed to update profile:", error);
+      alert("Network error");
     }
   };
 
@@ -151,17 +160,31 @@ export default function ProfilePage() {
             <Link
               href="/"
               className="p-2 rounded-lg text-forest/60 hover:bg-sage/20 dark:hover:bg-sage/800 transition-colors"
+              aria-label="Go back to home"
             >
               <ChevronRight className="h-5 w-5 rotate-180" />
             </Link>
             <button
               onClick={handleLogout}
               className="p-2 rounded-lg text-forest/60 hover:bg-sage/20 dark:hover:bg-sage/800 transition-colors"
+              aria-label="Sign out"
             >
               <LogOut className="h-5 w-5" />
             </button>
           </div>
         </div>
+
+        {profileError && (
+          <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg flex items-center justify-between">
+            <p className="text-red-700 dark:text-red-300">{profileError}</p>
+            <button
+              onClick={fetchProfile}
+              className="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        )}
 
         <div className="grid gap-6 lg:grid-cols-4">
           <aside className="lg:col-span-1">
@@ -178,12 +201,6 @@ export default function ProfilePage() {
                     <div className="w-full h-full rounded-full bg-sage/20 dark:bg-sage/700 flex items-center justify-center border-4 border-sage/30 dark:border-sage/600">
                       <User className="h-12 w-12 text-forest/40 dark:text-sandstone/40" />
                     </div>
-                  )}
-                  {editing && (
-                    <label className="absolute bottom-0 right-0 p-1 bg-amber text-forest rounded-full cursor-pointer hover:bg-amber/90">
-                      <Camera className="h-4 w-4" />
-                      <input type="file" className="sr-only" accept="image/*" />
-                    </label>
                   )}
                 </div>
                 <h2 className="text-xl font-bold text-forest dark:text-sandstone">{user.name}</h2>

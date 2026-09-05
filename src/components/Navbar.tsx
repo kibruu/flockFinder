@@ -154,6 +154,9 @@ export function Navbar() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg text-forest/70 hover:bg-sage/20 dark:text-sandstone/70 dark:hover:bg-sage/800"
+              aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={mobileMenuOpen}
+              aria-controls="mobile-navigation"
             >
               {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
             </button>
@@ -161,7 +164,7 @@ export function Navbar() {
         </div>
 
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-sage/20 dark:border-sage/20">
+          <div id="mobile-navigation" className="md:hidden py-4 border-t border-sage/20 dark:border-sage/20">
             <div className="flex flex-col gap-2">
               {NAV_ITEMS.map((item) => (
                 <Link

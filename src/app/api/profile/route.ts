@@ -29,12 +29,12 @@ export async function GET() {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    const [sightings, lifeListSpecies, tripsJoined, tripsHosted] = await Promise.all([
+    const [sightings, lifeListSpecies, tripsJoined, tripsHosted, lifeListCount] = await Promise.all([
       db.sighting.count({ where: { userId: session.id } }),
       db.sighting.groupBy({
         by: ["speciesId"],
         where: { userId: session.id },
-        _count: true,
+        _count: { speciesId: true },
         orderBy: { _count: { speciesId: "desc" } },
         take: 100,
       }),
@@ -42,6 +42,7 @@ export async function GET() {
         where: { userId: session.id, role: { in: ["PASSENGER", "SELF_DRIVE", "DRIVER"] } },
       }),
       db.trip.count({ where: { hostId: session.id } }),
+      getLifeListCount(session.id),
     ]);
 
     const speciesIds = lifeListSpecies.map((s) => s.speciesId);
@@ -78,7 +79,7 @@ export async function GET() {
         scientificName: details?.scientificName || "",
         category: details?.category || "",
         imageUrl: details?.imageUrl || null,
-        sightingCount: s._count,
+        sightingCount: s._count.speciesId,
         lastSpotted: dateMap.get(s.speciesId)?.toISOString() || new Date().toISOString(),
         hotspotName: hotspotMap.get(s.speciesId) || "Unknown location",
       };
@@ -92,7 +93,7 @@ export async function GET() {
       lifeList,
       stats: {
         totalSightings: sightings,
-        lifeListCount: lifeList.length,
+        lifeListCount,
         tripsJoined,
         tripsHosted,
       },
@@ -113,15 +114,45 @@ export async function PATCH(request: NextRequest) {
     const { name, bio, city, vehicleModel, vehicleSeats } = await request.json();
 
     const updateData: Record<string, unknown> = {};
-    if (name !== undefined) updateData.name = name;
-    if (bio !== undefined) updateData.bio = bio;
-    if (city !== undefined) updateData.city = city;
-    if (vehicleModel !== undefined) updateData.vehicleModel = vehicleModel;
+
+    if (name !== undefined) {
+      if (typeof name !== "string" || name.trim().length === 0) {
+        return NextResponse.json({ error: "Invalid name" }, { status: 400 });
+      }
+      updateData.name = name.trim();
+    }
+
+    if (bio !== undefined) {
+      if (typeof bio !== "string") {
+        return NextResponse.json({ error: "Invalid bio" }, { status: 400 });
+      }
+      updateData.bio = bio.trim();
+    }
+
+    if (city !== undefined) {
+      if (typeof city !== "string") {
+        return NextResponse.json({ error: "Invalid city" }, { status: 400 });
+      }
+      updateData.city = city.trim();
+    }
+
+    if (vehicleModel !== undefined) {
+      if (typeof vehicleModel !== "string") {
+        return NextResponse.json({ error: "Invalid vehicle model" }, { status: 400 });
+      }
+      updateData.vehicleModel = vehicleModel.trim();
+    }
+
     if (vehicleSeats !== undefined) {
       const seats = parseInt(String(vehicleSeats), 10);
-      if (!isNaN(seats) && seats >= 0 && seats <= 8) {
-        updateData.vehicleSeats = seats;
+      if (isNaN(seats) || seats < 0 || seats > 8) {
+        return NextResponse.json({ error: "Vehicle seats must be 0-8" }, { status: 400 });
       }
+      updateData.vehicleSeats = seats;
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return NextResponse.json({ error: "No valid fields to update" }, { status: 400 });
     }
 
     const user = await db.user.update({
