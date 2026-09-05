@@ -137,7 +137,15 @@ export default function ProfilePage() {
     );
   }
 
-  if (!user || !profileData) {
+  if (!user) {
+    return null;
+  }
+
+  if (!profileData && !profileError) {
+    return null;
+  }
+
+  if (!profileData) {
     return null;
   }
 
