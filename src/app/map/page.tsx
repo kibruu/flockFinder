@@ -1,21 +1,8 @@
 import { Metadata } from "next";
-import dynamic from "next/dynamic";
+import { MapView } from "@/components/MapViewClient";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/auth";
+import { getSession, parseStringArray } from "@/lib/auth";
 import type { Hotspot, Sighting, Trip } from "@/components/MapView";
-
-const MapView = dynamic(() => import("@/components/MapView").then((mod) => mod.MapView), {
-  ssr: false,
-  loading: () => (
-    <div className="flex h-[calc(100vh-4rem)] items-center justify-center bg-sandstone dark:bg-forest">
-      <div className="text-center">
-        <div className="h-12 w-12 mx-auto mb-4 animate-spin rounded-full border-4 border-teal-600 border-t-transparent" />
-        <p className="text-forest/60 dark:text-sandstone/60 text-lg">Loading map...</p>
-        <p className="text-sm text-forest/40 dark:text-sandstone/40 mt-2">Initializing Leaflet & loading data</p>
-      </div>
-    </div>
-  ),
-});
 
 async function getHotspots(): Promise<Hotspot[]> {
   return db.hotspot.findMany({
@@ -133,7 +120,7 @@ async function getTrips(): Promise<Trip[]> {
     date: t.date.toISOString(),
     meetingTime: t.meetingTime.toISOString(),
     meetingPoint: t.meetingPoint,
-    targetSpecies: JSON.parse(t.targetSpecies || "[]"),
+    targetSpecies: parseStringArray(t.targetSpecies),
     maxParticipants: t.maxParticipants,
     status: t.status,
     hotspotId: t.hotspotId,
@@ -163,7 +150,7 @@ export default async function MapPage() {
   ]);
 
   return (
-    <div className="min-h-screen bg-sandstone dark:bg-forest">
+    <div className="h-[calc(100vh-4rem)] bg-sandstone dark:bg-forest">
       <MapView
         hotspots={hotspots}
         sightings={sightings}

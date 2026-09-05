@@ -71,7 +71,7 @@ export async function getSession(): Promise<UserSession | null> {
     city: session.user.city,
     vehicleModel: session.user.vehicleModel,
     vehicleSeats: session.user.vehicleSeats,
-    badges: JSON.parse(session.user.badges || "[]"),
+    badges: parseStringArray(session.user.badges),
     createdAt: session.user.createdAt.toISOString(),
   };
 }
@@ -126,13 +126,23 @@ export async function switchDemoUser(demoName: keyof typeof DEMO_USERS): Promise
     city: user.city,
     vehicleModel: user.vehicleModel,
     vehicleSeats: user.vehicleSeats,
-    badges: JSON.parse(user.badges || "[]"),
+    badges: parseStringArray(user.badges),
     createdAt: user.createdAt.toISOString(),
   };
 }
 
 export function getDemoUsers(): readonly string[] {
   return Object.keys(DEMO_USERS) as readonly (keyof typeof DEMO_USERS)[];
+}
+
+export function parseStringArray(value: string | null | undefined): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    return [];
+  }
 }
 
 export async function getLifeListCount(userId: string): Promise<number> {

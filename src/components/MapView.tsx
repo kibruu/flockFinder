@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as L from "leaflet";
 import "leaflet.markercluster";
 import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair } from "lucide-react";
@@ -168,6 +168,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     expeditions: L.featureGroup(),
   });
   const tileLayerRef = useRef<L.TileLayer | null>(null);
+  const darkModeRef = useRef(document.documentElement.classList.contains("dark"));
   const [showLayers, setShowLayers] = useState({
     hotspots: true,
     sightings: true,
@@ -182,7 +183,28 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
   const [geolocationError, setGeolocationError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
+  const filteredSightings = useMemo(() => {
+    let result = sightings;
+    if (filters.species) {
+      const needle = filters.species.toLowerCase();
+      result = result.filter((s) => s.speciesName.toLowerCase().includes(needle));
+    }
+    if (filters.habitat) {
+      result = result.filter((s) => {
+        const hotspot = hotspots.find((h) => h.id === s.hotspotId);
+        return hotspot?.habitatType === filters.habitat;
+      });
+    }
+    if (filters.dateRange) {
+      const days = parseInt(filters.dateRange, 10);
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+      result = result.filter((s) => new Date(s.spottedAt) >= cutoff);
+    }
+    return result;
+  }, [sightings, hotspots, filters]);
+
   const updateTileLayer = useCallback((darkMode: boolean) => {
+    darkModeRef.current = darkMode;
     if (tileLayerRef.current) {
       mapInstanceRef.current?.removeLayer(tileLayerRef.current);
     }
@@ -214,6 +236,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     L.control.attribution({ position: "bottomright" }).addTo(map);
 
     const darkMode = document.documentElement.classList.contains("dark");
+    darkModeRef.current = darkMode;
     updateTileLayer(darkMode);
 
     Object.values(layersRef.current).forEach((layer) => layer.addTo(map));
@@ -237,11 +260,13 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     if (!mapInstanceRef.current || !mapReady) return;
 
     const darkMode = document.documentElement.classList.contains("dark");
+    darkModeRef.current = darkMode;
     updateTileLayer(darkMode);
 
     const observer = new MutationObserver(() => {
       const newDarkMode = document.documentElement.classList.contains("dark");
-      if (newDarkMode !== darkMode) {
+      if (newDarkMode !== darkModeRef.current) {
+        darkModeRef.current = newDarkMode;
         updateTileLayer(newDarkMode);
       }
     });
@@ -285,25 +310,6 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
     if (!showLayers.sightings) return;
 
-    let filteredSightings = sightings;
-
-    if (filters.species) {
-      filteredSightings = filteredSightings.filter((s) =>
-        s.speciesName.toLowerCase().includes(filters.species.toLowerCase())
-      );
-    }
-    if (filters.habitat) {
-      filteredSightings = filteredSightings.filter((s) => {
-        const hotspot = hotspots.find((h) => h.id === s.hotspotId);
-        return hotspot?.habitatType === filters.habitat;
-      });
-    }
-    if (filters.dateRange) {
-      const days = parseInt(filters.dateRange, 10);
-      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-      filteredSightings = filteredSightings.filter((s) => new Date(s.spottedAt) >= cutoff);
-    }
-
     filteredSightings.forEach((sighting) => {
       const isUser = sighting.isCurrentUser;
       const marker = L.marker([sighting.latitude, sighting.longitude], {
@@ -327,7 +333,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       marker.bindPopup(popupContent, { maxWidth: 300 });
       marker.addTo(sightingsLayer);
     });
-  }, [sightings, hotspots, showLayers.sightings, filters, mapReady]);
+  }, [filteredSightings, showLayers.sightings, mapReady]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !mapReady) return;
@@ -512,7 +518,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         </div>
       </div>
 
-      {(!sightings.length || (filters.species && !sightings.some(s => s.speciesName.toLowerCase().includes(filters.species.toLowerCase())))) && showLayers.sightings && (
+      {!filteredSightings.length && showLayers.sightings && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-amber-50 dark:bg-amber-900/90 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg shadow-lg text-sm text-center animate-slide-up">
           No sightings found matching current filters.
         </div>
