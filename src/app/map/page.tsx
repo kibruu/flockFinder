@@ -60,7 +60,7 @@ async function getSightings(currentUserId?: string): Promise<Sighting[]> {
     take: 500,
   });
 
-  return sightings.map((s) => ({
+  return sightings.map((s: typeof sightings[0]) => ({
     id: s.id,
     speciesId: s.speciesId,
     speciesName: s.species.commonName,
@@ -113,7 +113,7 @@ async function getTrips(): Promise<Trip[]> {
     orderBy: { date: "asc" },
   });
 
-  return trips.map((t) => ({
+  return trips.map((t: typeof trips[0]) => ({
     id: t.id,
     title: t.title,
     description: t.description,
