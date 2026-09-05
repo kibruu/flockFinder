@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
+import { Navbar } from "@/components/Navbar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -34,7 +35,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-text-primary font-sans">
-        {children}
+        <Navbar />
+        <main className="flex-1">{children}</main>
       </body>
     </html>
   );
