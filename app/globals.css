@@ -6,9 +6,13 @@
 :root {
   --color-forest-deep: #1B3B2B;
   --color-forest-mid: #3D6B52;
+  --color-forest: #2D5A3D;
+  --color-sage: #7BA05B;
   --color-sandstone-light: #F7F5F0;
   --color-sandstone-dark: #1A2421;
+  --color-sandstone: #F7F5F0;
   --color-amber-gold: #D97706;
+  --color-amber: #D97706;
   --color-sky-blue: #0284C7;
 
   --color-primary: var(--color-forest-deep);
@@ -52,6 +56,16 @@
   --color-text-primary: var(--color-text-primary);
   --color-text-secondary: var(--color-text-secondary);
   --color-border: var(--color-border);
+
+  --color-forest: var(--color-forest);
+  --color-forest-deep: var(--color-forest-deep);
+  --color-forest-mid: var(--color-forest-mid);
+  --color-sage: var(--color-sage);
+  --color-sandstone: var(--color-sandstone);
+  --color-sandstone-light: var(--color-sandstone-light);
+  --color-sandstone-dark: var(--color-sandstone-dark);
+  --color-amber: var(--color-amber);
+  --color-amber-gold: var(--color-amber-gold);
 }
 
 body {
