@@ -123,13 +123,37 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const speciesIds: string[] = Array.isArray(targetSpecies)
-      ? targetSpecies.filter((s: unknown): s is string => typeof s === "string")
-      : [];
+    const speciesIds = Array.from(
+      new Set(
+        Array.isArray(targetSpecies) ? targetSpecies.filter((s: unknown): s is string => typeof s === "string") : []
+      )
+    );
+
+    let parsedMaxParticipants: number | null = null;
+    if (maxParticipants !== undefined && maxParticipants !== null) {
+      const n = Number(maxParticipants);
+      if (!Number.isInteger(n) || n < 1 || n > 50) {
+        return NextResponse.json({ error: "Max participants must be an integer between 1 and 50" }, { status: 400 });
+      }
+      parsedMaxParticipants = n;
+    }
 
     const hotspot = await db.hotspot.findUnique({ where: { id: hotspotId } });
     if (!hotspot) {
       return NextResponse.json({ error: "Hotspot not found" }, { status: 404 });
+    }
+
+    let species: { id: string; commonName: string; scientificName: string; imageUrl: string | null }[] = [];
+    if (speciesIds.length > 0) {
+      species = await db.species.findMany({
+        where: { id: { in: speciesIds } },
+        select: { id: true, commonName: true, scientificName: true, imageUrl: true },
+      });
+      const foundIds = new Set(species.map((s) => s.id));
+      const unknownIds = speciesIds.filter((id) => !foundIds.has(id));
+      if (unknownIds.length > 0) {
+        return NextResponse.json({ error: `Unknown species: ${unknownIds.join(", ")}` }, { status: 400 });
+      }
     }
 
     const trip = await db.$transaction(async (tx) => {
@@ -143,7 +167,7 @@ export async function POST(request: NextRequest) {
           meetingTime: new Date(meetingTime),
           meetingPoint,
           targetSpecies: JSON.stringify(speciesIds),
-          maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : null,
+          maxParticipants: parsedMaxParticipants,
           status: "UPCOMING",
         },
         include: {
@@ -158,14 +182,6 @@ export async function POST(request: NextRequest) {
 
       return t;
     });
-
-    let species: { id: string; commonName: string; scientificName: string; imageUrl: string | null }[] = [];
-    if (speciesIds.length > 0) {
-      species = await db.species.findMany({
-        where: { id: { in: speciesIds } },
-        select: { id: true, commonName: true, scientificName: true, imageUrl: true },
-      });
-    }
 
     return NextResponse.json({
       id: trip.id,

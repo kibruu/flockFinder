@@ -217,7 +217,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
 
   const date = new Date(trip.date);
   const meetingTime = new Date(trip.meetingTime);
-  const isHost = trip.currentUser.rsvp?.role === "HOST";
+  const isHost = trip.host?.id === trip.currentUser.id;
   const userRole = trip.currentUser.rsvp?.role;
   const canOfferCarpool = (userRole === "DRIVER" || userRole === "SELF_DRIVE" || userRole === "HOST") && !trip.currentUser.carpoolOffer;
 
