@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useCallback, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { TripCard } from "@/components/TripCard";
 import { TripForm } from "@/components/TripForm";
@@ -56,10 +56,9 @@ export function TripsExplorer({
   authenticated,
 }: TripsExplorerProps) {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [trips, setTrips] = useState<TripListItem[]>(initialTrips);
   const [pagination, setPagination] = useState<Pagination>(initialPagination);
-  const [loading, setLoading] = useState(false);
+  const [isTransitioning, startTransition] = useTransition();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [filterOpen, setFilterOpen] = useState(true);
@@ -67,17 +66,14 @@ export function TripsExplorer({
   useEffect(() => {
     setTrips(initialTrips);
     setPagination(initialPagination);
-    if (searchParams.get("page") === "1" || !searchParams.get("page")) {
-      setPagination((p) => ({ ...p, page: 1 }));
-    }
-  }, [initialTrips, initialPagination, searchParams]);
+  }, [initialTrips, initialPagination]);
 
-  const fetchTrips = useCallback(
-    async (nextFilters: Filters, nextPage: number) => {
+  const navigateTo = useCallback(
+    (nextFilters: Filters, nextPage: number) => {
       const params = new URLSearchParams({
         status: nextFilters.status,
         page: nextPage.toString(),
-        limit: initialPagination.limit.toString(),
+        limit: String(initialPagination.limit),
       });
       if (nextFilters.hotspotId) params.set("hotspotId", nextFilters.hotspotId);
       if (nextFilters.speciesId) params.set("speciesId", nextFilters.speciesId);
@@ -85,33 +81,22 @@ export function TripsExplorer({
       if (nextFilters.dateTo) params.set("dateTo", nextFilters.dateTo);
       if (nextFilters.hasOpenSeats) params.set("hasOpenSeats", "true");
 
-      const query = params.toString();
-      router.replace(`/trips?${query}`);
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/trips?${query}`);
-        if (res.ok) {
-          const data = await res.json();
-          setTrips(data.trips);
-          setPagination(data.pagination);
-        }
-      } catch (error) {
-        console.error("Failed to fetch trips:", error);
-      } finally {
-        setLoading(false);
-      }
+      startTransition(() => {
+        router.replace(`/trips?${params.toString()}`);
+      });
     },
     [initialPagination.limit, router]
   );
 
   const handleFilterChange = (key: keyof Filters, value: string | boolean) => {
-    setFilters((prev) => ({ ...prev, [key]: value }));
-    fetchTrips({ ...filters, [key]: value }, 1);
+    const next = { ...filters, [key]: value };
+    setFilters(next);
+    navigateTo(next, 1);
   };
 
   const handlePageChange = (page: number) => {
     if (page < 1 || page > pagination.totalPages) return;
-    fetchTrips(filters, page);
+    navigateTo(filters, page);
   };
 
   return (
@@ -150,8 +135,9 @@ export function TripsExplorer({
 
               <div className={filterOpen ? "space-y-4" : "hidden"}>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
+                  <label htmlFor="filter-status" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Status</label>
                   <select
+                    id="filter-status"
                     value={filters.status}
                     onChange={(e) => handleFilterChange("status", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -164,8 +150,9 @@ export function TripsExplorer({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hotspot</label>
+                  <label htmlFor="filter-hotspot" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Hotspot</label>
                   <select
+                    id="filter-hotspot"
                     value={filters.hotspotId}
                     onChange={(e) => handleFilterChange("hotspotId", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -180,10 +167,11 @@ export function TripsExplorer({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="filter-species" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Target Species
                   </label>
                   <select
+                    id="filter-species"
                     value={filters.speciesId}
                     onChange={(e) => handleFilterChange("speciesId", e.target.value)}
                     className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -198,8 +186,9 @@ export function TripsExplorer({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date From</label>
+                  <label htmlFor="filter-date-from" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date From</label>
                   <input
+                    id="filter-date-from"
                     type="date"
                     value={filters.dateFrom}
                     onChange={(e) => handleFilterChange("dateFrom", e.target.value)}
@@ -208,8 +197,9 @@ export function TripsExplorer({
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date To</label>
+                  <label htmlFor="filter-date-to" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date To</label>
                   <input
+                    id="filter-date-to"
                     type="date"
                     value={filters.dateTo}
                     onChange={(e) => handleFilterChange("dateTo", e.target.value)}
@@ -231,7 +221,7 @@ export function TripsExplorer({
           </aside>
 
           <main className="flex-1">
-            {loading ? (
+            {isTransitioning ? (
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div
@@ -295,7 +285,7 @@ export function TripsExplorer({
           hotspots={hotspots}
           species={species}
           onClose={() => setShowCreateModal(false)}
-          onCreated={() => fetchTrips(filters, 1)}
+          onCreated={() => navigateTo(filters, 1)}
         />
       )}
     </>

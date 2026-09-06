@@ -24,11 +24,14 @@ async function getTrips(searchParams: SearchParams) {
   const status = typeof searchParams.status === "string" ? searchParams.status : undefined;
   const hotspotId = typeof searchParams.hotspotId === "string" ? searchParams.hotspotId : undefined;
   const speciesId = typeof searchParams.speciesId === "string" ? searchParams.speciesId : undefined;
-  const dateFrom = typeof searchParams.dateFrom === "string" ? searchParams.dateFrom : undefined;
-  const dateTo = typeof searchParams.dateTo === "string" ? searchParams.dateTo : undefined;
+  const dateFromRaw = typeof searchParams.dateFrom === "string" ? searchParams.dateFrom : undefined;
+  const dateToRaw = typeof searchParams.dateTo === "string" ? searchParams.dateTo : undefined;
   const hasOpenSeats = searchParams.hasOpenSeats === "true";
   const page = Math.max(1, parseInt(typeof searchParams.page === "string" ? searchParams.page : "1", 10) || 1);
   const limit = 20;
+
+  const dateFrom = dateFromRaw && !isNaN(new Date(dateFromRaw).getTime()) ? new Date(dateFromRaw) : null;
+  const dateTo = dateToRaw && !isNaN(new Date(dateToRaw).getTime()) ? new Date(`${dateToRaw}T23:59:59`) : null;
 
   const where: Record<string, unknown> = {};
   if (status && status !== "ALL") where.status = status;
@@ -36,8 +39,8 @@ async function getTrips(searchParams: SearchParams) {
   if (speciesId) where.targetSpecies = { contains: `"${speciesId}"` };
   if (dateFrom || dateTo) {
     where.date = {};
-    if (dateFrom) (where.date as Record<string, Date>).gte = new Date(dateFrom);
-    if (dateTo) (where.date as Record<string, Date>).lte = new Date(dateTo);
+    if (dateFrom) (where.date as Record<string, Date>).gte = dateFrom;
+    if (dateTo) (where.date as Record<string, Date>).lte = dateTo;
   }
   if (hasOpenSeats) where.carpoolOffers = { some: { availableSeats: { gt: 0 } } };
 
@@ -60,7 +63,8 @@ async function getTrips(searchParams: SearchParams) {
   const tripsWithIds = trips.map((trip) => {
     let ids: string[] = [];
     try {
-      ids = JSON.parse(trip.targetSpecies || "[]");
+      const parsed: unknown = JSON.parse(trip.targetSpecies || "[]");
+      ids = Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
     } catch {
       ids = [];
     }

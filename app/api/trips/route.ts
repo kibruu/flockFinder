@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
     const hasOpenSeats = searchParams.get("hasOpenSeats") === "true";
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20));
 
     const where: Record<string, unknown> = {};
 
@@ -62,7 +62,8 @@ export async function GET(request: NextRequest) {
     const tripsParsed = trips.map((trip) => {
       let targetSpeciesIds: string[] = [];
       try {
-        targetSpeciesIds = JSON.parse(trip.targetSpecies || "[]");
+        const parsed: unknown = JSON.parse(trip.targetSpecies || "[]");
+        targetSpeciesIds = Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : [];
       } catch {
         targetSpeciesIds = [];
       }
@@ -122,36 +123,43 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    const speciesIds: string[] = Array.isArray(targetSpecies)
+      ? targetSpecies.filter((s: unknown): s is string => typeof s === "string")
+      : [];
+
     const hotspot = await db.hotspot.findUnique({ where: { id: hotspotId } });
     if (!hotspot) {
       return NextResponse.json({ error: "Hotspot not found" }, { status: 404 });
     }
 
-    const trip = await db.trip.create({
-      data: {
-        title,
-        description: description || null,
-        hostId: session.id,
-        hotspotId,
-        date: new Date(date),
-        meetingTime: new Date(meetingTime),
-        meetingPoint,
-        targetSpecies: JSON.stringify(targetSpecies || []),
-        maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : null,
-        status: "UPCOMING",
-      },
-      include: {
-        host: { select: { id: true, name: true, avatarUrl: true } },
-        hotspot: { select: { id: true, name: true, locationName: true } },
-      },
-    });
+    const trip = await db.$transaction(async (tx) => {
+      const t = await tx.trip.create({
+        data: {
+          title,
+          description: description || null,
+          hostId: session.id,
+          hotspotId,
+          date: new Date(date),
+          meetingTime: new Date(meetingTime),
+          meetingPoint,
+          targetSpecies: JSON.stringify(speciesIds),
+          maxParticipants: maxParticipants ? parseInt(String(maxParticipants), 10) : null,
+          status: "UPCOMING",
+        },
+        include: {
+          host: { select: { id: true, name: true, avatarUrl: true } },
+          hotspot: { select: { id: true, name: true, locationName: true } },
+        },
+      });
 
-    await db.tripRsvp.create({
-      data: { tripId: trip.id, userId: session.id, role: "HOST" },
+      await tx.tripRsvp.create({
+        data: { tripId: t.id, userId: session.id, role: "HOST" },
+      });
+
+      return t;
     });
 
     let species: { id: string; commonName: string; scientificName: string; imageUrl: string | null }[] = [];
-    const speciesIds: string[] = targetSpecies || [];
     if (speciesIds.length > 0) {
       species = await db.species.findMany({
         where: { id: { in: speciesIds } },

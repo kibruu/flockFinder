@@ -12,6 +12,18 @@ export function TripCard({ trip }: TripCardProps) {
   const date = new Date(trip.date);
   const meetingTime = new Date(trip.meetingTime);
 
+  const dateLabel = date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  });
+  const timeLabel = meetingTime.toLocaleTimeString("en-US", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+  });
+
   return (
     <Link
       href={`/trips/${trip.id}`}
@@ -48,8 +60,7 @@ export function TripCard({ trip }: TripCardProps) {
           <div className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
             <span>
-              {date.toLocaleDateString()} &middot;{" "}
-              {meetingTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+              {dateLabel} &middot; {timeLabel}
             </span>
           </div>
         </div>

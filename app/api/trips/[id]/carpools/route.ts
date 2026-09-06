@@ -36,33 +36,55 @@ export async function POST(
       return NextResponse.json({ error: "Total seats must be 1-8" }, { status: 400 });
     }
 
-    const carpool = await db.carpoolOffer.upsert({
+    const existingOffer = await db.carpoolOffer.findUnique({
       where: { id: `carpool-${id}-${session.id}` },
-      update: {
-        originArea,
-        departureTime: new Date(departureTime),
-        totalSeats: seats,
-        availableSeats: seats,
-        notes: notes || null,
-        updatedAt: new Date(),
-      },
-      create: {
-        id: `carpool-${id}-${session.id}`,
-        tripId: id,
-        driverId: session.id,
-        originArea,
-        departureTime: new Date(departureTime),
-        totalSeats: seats,
-        availableSeats: seats,
-        notes: notes || null,
-      },
-      include: {
-        driver: { select: { id: true, name: true, avatarUrl: true, vehicleModel: true, vehicleSeats: true } },
-        bookings: { include: { passenger: { select: { id: true, name: true, avatarUrl: true } } } },
-      },
+      select: { id: true, bookings: { where: { status: "CONFIRMED" }, select: { id: true } } },
     });
 
-    if (existingRsvp.role !== "DRIVER") {
+    if (existingOffer && seats < existingOffer.bookings.length) {
+      return NextResponse.json(
+        { error: `Total seats cannot be less than ${existingOffer.bookings.length} confirmed booking(s)` },
+        { status: 400 }
+      );
+    }
+
+    let carpool;
+    if (existingOffer) {
+      carpool = await db.carpoolOffer.update({
+        where: { id: existingOffer.id },
+        data: {
+          originArea,
+          departureTime: new Date(departureTime),
+          totalSeats: seats,
+          availableSeats: seats - existingOffer.bookings.length,
+          notes: notes || null,
+          updatedAt: new Date(),
+        },
+        include: {
+          driver: { select: { id: true, name: true, avatarUrl: true, vehicleModel: true, vehicleSeats: true } },
+          bookings: { include: { passenger: { select: { id: true, name: true, avatarUrl: true } } } },
+        },
+      });
+    } else {
+      carpool = await db.carpoolOffer.create({
+        data: {
+          id: `carpool-${id}-${session.id}`,
+          tripId: id,
+          driverId: session.id,
+          originArea,
+          departureTime: new Date(departureTime),
+          totalSeats: seats,
+          availableSeats: seats,
+          notes: notes || null,
+        },
+        include: {
+          driver: { select: { id: true, name: true, avatarUrl: true, vehicleModel: true, vehicleSeats: true } },
+          bookings: { include: { passenger: { select: { id: true, name: true, avatarUrl: true } } } },
+        },
+      });
+    }
+
+    if (existingRsvp.role === "SELF_DRIVE") {
       await db.tripRsvp.update({
         where: { tripId_userId: { tripId: id, userId: session.id } },
         data: { role: "DRIVER" },

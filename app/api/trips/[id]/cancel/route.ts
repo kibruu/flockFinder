@@ -31,23 +31,23 @@ export async function POST(
       return NextResponse.json({ error: "Trip already cancelled" }, { status: 400 });
     }
 
-    await db.trip.update({
-      where: { id },
-      data: { status: "CANCELLED", updatedAt: new Date() },
-    });
-
-    await db.carpoolBooking.updateMany({
-      where: {
-        offer: { tripId: id },
-        status: "CONFIRMED",
-      },
-      data: { status: "CANCELLED" },
-    });
-
-    await db.carpoolOffer.updateMany({
-      where: { tripId: id },
-      data: { availableSeats: 0 },
-    });
+    await db.$transaction([
+      db.trip.update({
+        where: { id },
+        data: { status: "CANCELLED", updatedAt: new Date() },
+      }),
+      db.carpoolBooking.updateMany({
+        where: {
+          offer: { tripId: id },
+          status: "CONFIRMED",
+        },
+        data: { status: "CANCELLED" },
+      }),
+      db.carpoolOffer.updateMany({
+        where: { tripId: id },
+        data: { availableSeats: 0 },
+      }),
+    ]);
 
     return NextResponse.json({ success: true });
   } catch (error) {

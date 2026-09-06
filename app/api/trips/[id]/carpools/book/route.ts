@@ -19,7 +19,10 @@ export async function POST(
       return NextResponse.json({ error: "Offer ID required" }, { status: 400 });
     }
 
-    const trip = await db.trip.findUnique({ where: { id }, select: { id: true, status: true } });
+    const trip = await db.trip.findUnique({
+      where: { id },
+      select: { id: true, status: true, maxParticipants: true },
+    });
     if (!trip || trip.status !== "UPCOMING") {
       return NextResponse.json({ error: "Trip not found or not upcoming" }, { status: 404 });
     }
@@ -44,20 +47,47 @@ export async function POST(
       return NextResponse.json({ error: "Already booked" }, { status: 400 });
     }
 
-    await db.tripRsvp.upsert({
-      where: { tripId_userId: { tripId: id, userId: session.id } },
-      update: { role: "PASSENGER" },
-      create: { tripId: id, userId: session.id, role: "PASSENGER" },
-    });
+    try {
+      await db.$transaction(async (tx) => {
+        const existingRsvp = await tx.tripRsvp.findUnique({
+          where: { tripId_userId: { tripId: id, userId: session.id } },
+        });
 
-    await db.carpoolBooking.create({
-      data: { offerId, passengerId: session.id, status: "CONFIRMED" },
-    });
+        if (!existingRsvp && trip.maxParticipants) {
+          const participantCount = await tx.tripRsvp.count({ where: { tripId: id } });
+          if (participantCount >= trip.maxParticipants) {
+            throw new Error("Trip is full");
+          }
+        }
 
-    await db.carpoolOffer.update({
-      where: { id: offerId },
-      data: { availableSeats: { decrement: 1 } },
-    });
+        await tx.tripRsvp.upsert({
+          where: { tripId_userId: { tripId: id, userId: session.id } },
+          update: { role: "PASSENGER" },
+          create: { tripId: id, userId: session.id, role: "PASSENGER" },
+        });
+
+        const updated = await tx.carpoolOffer.updateMany({
+          where: { id: offerId, availableSeats: { gt: 0 } },
+          data: { availableSeats: { decrement: 1 } },
+        });
+        if (updated.count !== 1) {
+          throw new Error("No seats available");
+        }
+
+        await tx.carpoolBooking.create({
+          data: { offerId, passengerId: session.id, status: "CONFIRMED" },
+        });
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message === "Trip is full") {
+        return NextResponse.json({ error: "Trip is full" }, { status: 400 });
+      }
+      if (message === "No seats available") {
+        return NextResponse.json({ error: "No seats available" }, { status: 400 });
+      }
+      throw error;
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

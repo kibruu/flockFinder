@@ -219,7 +219,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
   const meetingTime = new Date(trip.meetingTime);
   const isHost = trip.currentUser.rsvp?.role === "HOST";
   const userRole = trip.currentUser.rsvp?.role;
-  const canOfferCarpool = (userRole === "DRIVER" || userRole === "SELF_DRIVE") && !trip.currentUser.carpoolOffer;
+  const canOfferCarpool = (userRole === "DRIVER" || userRole === "SELF_DRIVE" || userRole === "HOST") && !trip.currentUser.carpoolOffer;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -664,13 +664,17 @@ function CarpoolModal({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setSubmitting(true);
-    const form = new FormData(e.currentTarget);
-    onSubmit({
-      originArea: form.get("originArea") as string,
-      departureTime: form.get("departureTime") as string,
-      totalSeats: parseInt(form.get("totalSeats") as string),
-      notes: (form.get("notes") as string) || "",
-    });
+    try {
+      const form = new FormData(e.currentTarget);
+      await onSubmit({
+        originArea: form.get("originArea") as string,
+        departureTime: form.get("departureTime") as string,
+        totalSeats: parseInt(form.get("totalSeats") as string),
+        notes: (form.get("notes") as string) || "",
+      });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

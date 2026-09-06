@@ -21,7 +21,7 @@ export async function POST(
 
     const trip = await db.trip.findUnique({
       where: { id },
-      select: { id: true, status: true, maxParticipants: true, _count: { select: { rsvps: true } } },
+      select: { id: true, status: true, maxParticipants: true },
     });
 
     if (!trip) {
@@ -36,17 +36,28 @@ export async function POST(
       where: { tripId_userId: { tripId: id, userId: session.id } },
     });
 
-    if (!existing && trip.maxParticipants && trip._count.rsvps >= trip.maxParticipants) {
-      return NextResponse.json({ error: "Trip is full" }, { status: 400 });
+    try {
+      const rsvp = await db.$transaction(async (tx) => {
+        if (!existing && trip.maxParticipants) {
+          const count = await tx.tripRsvp.count({ where: { tripId: id } });
+          if (count >= trip.maxParticipants) {
+            throw new Error("Trip is full");
+          }
+        }
+        return tx.tripRsvp.upsert({
+          where: { tripId_userId: { tripId: id, userId: session.id } },
+          update: { role },
+          create: { tripId: id, userId: session.id, role },
+        });
+      });
+
+      return NextResponse.json({ rsvp });
+    } catch (error) {
+      if (error instanceof Error && error.message === "Trip is full") {
+        return NextResponse.json({ error: "Trip is full" }, { status: 400 });
+      }
+      throw error;
     }
-
-    const rsvp = await db.tripRsvp.upsert({
-      where: { tripId_userId: { tripId: id, userId: session.id } },
-      update: { role },
-      create: { tripId: id, userId: session.id, role },
-    });
-
-    return NextResponse.json({ rsvp });
   } catch (error) {
     console.error("RSVP error:", error);
     return NextResponse.json({ error: "Failed to RSVP" }, { status: 500 });

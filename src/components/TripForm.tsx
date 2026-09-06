@@ -29,11 +29,19 @@ interface TripFormProps {
 export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProps) {
   const router = useRouter();
 
+  const localToday = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, "0");
+    const d = String(now.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
     hotspotId: "",
-    date: new Date().toISOString().split("T")[0],
+    date: localToday(),
     meetingTime: "06:00",
     meetingPoint: "",
     targetSpecies: [] as string[],
@@ -92,6 +100,8 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
 
     setLoading(true);
     try {
+      const meetingDateTime = new Date(`${formData.date}T${formData.meetingTime}:00`);
+
       const res = await fetch("/api/trips", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -100,7 +110,7 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
           description: formData.description,
           hotspotId: formData.hotspotId,
           date: formData.date,
-          meetingTime: `${formData.date}T${formData.meetingTime}:00`,
+          meetingTime: meetingDateTime.toISOString(),
           meetingPoint: formData.meetingPoint,
           targetSpecies: formData.targetSpecies,
           maxParticipants: formData.maxParticipants ? parseInt(formData.maxParticipants) : null,
@@ -127,10 +137,42 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="trip-form-title"
+      onClick={onClose}
+    >
+      <div
+        className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+        onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (e.key === "Escape") {
+            onClose();
+            return;
+          }
+          if (e.key === "Tab") {
+            const focusables = Array.from(
+              e.currentTarget.querySelectorAll<HTMLElement>(
+                'button, input, select, textarea, a[href], [tabindex]:not([tabindex="-1"])'
+              )
+            );
+            if (focusables.length === 0) return;
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+              e.preventDefault();
+              last.focus();
+            } else if (!e.shiftKey && document.activeElement === last) {
+              e.preventDefault();
+              first.focus();
+            }
+          }
+        }}
+      >
         <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-6 py-4 flex items-center justify-between z-10">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Create New Trip</h2>
+          <h2 id="trip-form-title" className="text-xl font-semibold text-gray-900 dark:text-white">Create New Trip</h2>
           <button
             onClick={onClose}
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -151,6 +193,7 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
               value={formData.title}
               onChange={handleChange}
               placeholder="e.g., Cape May Spring Migration Spectacular"
+              autoFocus
               className={`w-full px-4 py-2.5 rounded-lg border bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500 ${errors.title ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
               disabled={loading}
             />
@@ -211,7 +254,7 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
                   type="date"
                   value={formData.date}
                   onChange={handleChange}
-                  min={new Date().toISOString().split("T")[0]}
+                  min={localToday()}
                   className={`w-full pl-9 pr-4 py-2.5 rounded-lg border bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${errors.date ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
                   disabled={loading}
                 />
