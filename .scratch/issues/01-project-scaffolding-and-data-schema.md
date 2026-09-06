@@ -1,7 +1,7 @@
-﻿# 01 Project Scaffolding and Database Schema
+# 01 Project Scaffolding and Database Schema
 
 Type: task
-Status: open
+Status: closed
 Blocked by: None
 
 ## Question

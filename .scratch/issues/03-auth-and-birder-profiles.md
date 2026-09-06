@@ -1,7 +1,7 @@
-﻿# 03 Auth and Birder Profiles
+# 03 Auth and Birder Profiles
 
 Type: task
-Status: open
+Status: closed
 Blocked by: 01, 02
 
 ## Question

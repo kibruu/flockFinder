@@ -1,7 +1,7 @@
-﻿# 04 Interactive Map and Hotspot Explorer
+# 04 Interactive Map and Hotspot Explorer
 
 Type: task
-Status: open
+Status: closed
 Blocked by: 01, 02
 
 ## Question
