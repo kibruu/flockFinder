@@ -41,6 +41,8 @@ type HotspotDetail = {
     };
     user: { name: string };
   }[];
+  recentSightingCount: number;
+  distinctSpeciesCount: number;
 };
 
 async function getHotspotDetail(id: string): Promise<HotspotDetail | null> {
@@ -79,6 +81,16 @@ async function getHotspotDetail(id: string): Promise<HotspotDetail | null> {
   const upcomingTrips = hotspot.trips.filter((t) => t.status === "UPCOMING");
   const recentSightings = hotspot.sightings.filter((s) => s.spottedAt >= thirtyDaysAgo);
 
+  const [recentSightingCount, speciesGroups] = await Promise.all([
+    db.sighting.count({
+      where: { hotspotId: hotspot.id, spottedAt: { gte: thirtyDaysAgo } },
+    }),
+    db.sighting.groupBy({
+      by: ["speciesId"],
+      where: { hotspotId: hotspot.id, spottedAt: { gte: thirtyDaysAgo } },
+    }),
+  ]);
+
   return {
     id: hotspot.id,
     name: hotspot.name,
@@ -107,6 +119,8 @@ async function getHotspotDetail(id: string): Promise<HotspotDetail | null> {
       species: s.species,
       user: s.user,
     })),
+    recentSightingCount,
+    distinctSpeciesCount: speciesGroups.length,
   };
 }
 
@@ -208,13 +222,11 @@ export default async function HotspotDetailPage({ params }: Props) {
                 <p className="text-xs text-forest/50 dark:text-sandstone/50">Upcoming expeditions</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-teal-600 dark:text-sage">{hotspot.sightings.length}</p>
+                <p className="text-2xl font-bold text-teal-600 dark:text-sage">{hotspot.recentSightingCount}</p>
                 <p className="text-xs text-forest/50 dark:text-sandstone/50">Sightings (30 days)</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-teal-600 dark:text-sage">
-                  {new Set(hotspot.sightings.map((s) => s.species.id)).size}
-                </p>
+                <p className="text-2xl font-bold text-teal-600 dark:text-sage">{hotspot.distinctSpeciesCount}</p>
                 <p className="text-xs text-forest/50 dark:text-sandstone/50">Species spotted</p>
               </div>
             </div>
@@ -245,11 +257,12 @@ export default async function HotspotDetailPage({ params }: Props) {
                             month: "long",
                             day: "numeric",
                             year: "numeric",
+                            timeZone: "UTC",
                           })}
                         </p>
                         <p className="mt-1 flex items-center gap-1 text-sm text-forest/50 dark:text-sandstone/50">
                           <Clock className="h-3.5 w-3.5" />
-                          Meet {new Date(trip.meetingTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+                          Meet {new Date(trip.meetingTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })}
                           {trip.meetingPoint && ` at ${trip.meetingPoint}`}
                         </p>
                       </div>
