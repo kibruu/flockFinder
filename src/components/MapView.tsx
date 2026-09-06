@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as L from "leaflet";
-import "leaflet.markercluster";
+import { ensureMarkerCluster } from "@/lib/leafletWithCluster";
 import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair } from "lucide-react";
 
 function escapeHtml(str: string): string {
@@ -168,12 +168,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef({
     hotspots: L.featureGroup(),
-    sightings: L.markerClusterGroup({
-      iconCreateFunction: (cluster) => createClusterIcon(cluster.getChildCount(), LAYER_COLORS.sightings),
-      spiderfyOnMaxZoom: true,
-      showCoverageOnHover: false,
-      zoomToBoundsOnClick: true,
-    }),
+    sightings: null as L.MarkerClusterGroup | null,
     expeditions: L.featureGroup(),
   });
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -248,20 +243,34 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     darkModeRef.current = darkMode;
     updateTileLayer(darkMode);
 
-    Object.values(layersRef.current).forEach((layer) => layer.addTo(map));
+    void ensureMarkerCluster().then(() => {
+      if (!mapInstanceRef.current) return;
 
-    map.on("zoomend", () => {
-      if (map.getZoom() < 5) {
-        map.closePopup();
-      }
+      layersRef.current.sightings = L.markerClusterGroup({
+        iconCreateFunction: (cluster) => createClusterIcon(cluster.getChildCount(), LAYER_COLORS.sightings),
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+      });
+
+      Object.values(layersRef.current).forEach((layer) => {
+        if (layer) layer.addTo(map);
+      });
+
+      map.on("zoomend", () => {
+        if (map.getZoom() < 5) {
+          map.closePopup();
+        }
+      });
+
+      setMapReady(true);
     });
-
-    setMapReady(true);
 
     return () => {
       map.remove();
       mapInstanceRef.current = null;
       tileLayerRef.current = null;
+      layersRef.current.sightings = null;
     };
   }, [updateTileLayer]);
 
@@ -319,6 +328,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     if (!mapInstanceRef.current || !mapReady) return;
 
     const sightingsLayer = layersRef.current.sightings;
+    if (!sightingsLayer) return;
     sightingsLayer.clearLayers();
 
     if (!showLayers.sightings) return;
