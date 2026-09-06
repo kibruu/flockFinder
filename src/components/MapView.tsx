@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as L from "leaflet";
 import { ensureMarkerCluster } from "@/lib/leafletWithCluster";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair } from "lucide-react";
 
 function escapeHtml(str: string): string {
@@ -183,29 +184,30 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     habitat: "",
     dateRange: "",
   });
+  const debouncedFilters = useDebouncedValue(filters, 300);
   const [centerOnMe, setCenterOnMe] = useState(false);
   const [geolocationError, setGeolocationError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
   const filteredSightings = useMemo(() => {
     let result = sightings;
-    if (filters.species) {
-      const needle = filters.species.toLowerCase();
+    if (debouncedFilters.species) {
+      const needle = debouncedFilters.species.toLowerCase();
       result = result.filter((s) => s.speciesName.toLowerCase().includes(needle));
     }
-    if (filters.habitat) {
+    if (debouncedFilters.habitat) {
       result = result.filter((s) => {
         const hotspot = hotspots.find((h) => h.id === s.hotspotId);
-        return hotspot?.habitatType === filters.habitat;
+        return hotspot?.habitatType === debouncedFilters.habitat;
       });
     }
-    if (filters.dateRange) {
-      const days = parseInt(filters.dateRange, 10);
+    if (debouncedFilters.dateRange) {
+      const days = parseInt(debouncedFilters.dateRange, 10);
       const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
       result = result.filter((s) => new Date(s.spottedAt) >= cutoff);
     }
     return result;
-  }, [sightings, hotspots, filters]);
+  }, [sightings, hotspots, debouncedFilters]);
 
   const updateTileLayer = useCallback((darkMode: boolean) => {
     darkModeRef.current = darkMode;

@@ -113,6 +113,17 @@ async function getTrips(): Promise<Trip[]> {
     orderBy: { date: "asc" },
   });
 
+  const allSpeciesIds = new Set<string>();
+  trips.forEach((t) => parseStringArray(t.targetSpecies).forEach((id) => allSpeciesIds.add(id)));
+  const speciesMap = new Map<string, string>();
+  if (allSpeciesIds.size > 0) {
+    const species = await db.species.findMany({
+      where: { id: { in: Array.from(allSpeciesIds) } },
+      select: { id: true, commonName: true },
+    });
+    species.forEach((s) => speciesMap.set(s.id, s.commonName));
+  }
+
   return trips.map((t: typeof trips[0]) => ({
     id: t.id,
     title: t.title,
@@ -120,7 +131,9 @@ async function getTrips(): Promise<Trip[]> {
     date: t.date.toISOString(),
     meetingTime: t.meetingTime.toISOString(),
     meetingPoint: t.meetingPoint,
-    targetSpecies: parseStringArray(t.targetSpecies),
+    targetSpecies: parseStringArray(t.targetSpecies)
+      .map((id) => speciesMap.get(id))
+      .filter((name): name is string => Boolean(name)),
     maxParticipants: t.maxParticipants,
     status: t.status,
     hotspotId: t.hotspotId,
