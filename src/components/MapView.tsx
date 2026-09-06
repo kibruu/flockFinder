@@ -7,11 +7,11 @@ import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair } 
 
 function escapeHtml(str: string): string {
   return str
-    .replace(/&/g, "&")
-    .replace(/</g, "<")
-    .replace(/>/g, ">")
-    .replace(/"/g, "\"")
-    .replace(/'/g, "'");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 export interface Hotspot {
