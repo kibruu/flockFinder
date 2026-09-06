@@ -16,8 +16,17 @@ export async function GET(request: NextRequest) {
     const dateFrom = searchParams.get("dateFrom");
     const dateTo = searchParams.get("dateTo");
     const hasOpenSeats = searchParams.get("hasOpenSeats") === "true";
-    const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10) || 1);
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get("limit") || "20", 10) || 20));
+
+    const pageRaw = searchParams.get("page");
+    const limitRaw = searchParams.get("limit");
+    const page = pageRaw ? Number(pageRaw) : 1;
+    const limit = limitRaw ? Number(limitRaw) : 20;
+    if (!Number.isInteger(page) || page < 1) {
+      return NextResponse.json({ error: "page must be a positive integer" }, { status: 400 });
+    }
+    if (!Number.isInteger(limit) || limit < 1 || limit > 50) {
+      return NextResponse.json({ error: "limit must be an integer between 1 and 50" }, { status: 400 });
+    }
 
     const where: Record<string, unknown> = {};
 
@@ -123,11 +132,21 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const speciesIds = Array.from(
-      new Set(
-        Array.isArray(targetSpecies) ? targetSpecies.filter((s: unknown): s is string => typeof s === "string") : []
-      )
-    );
+    if (targetSpecies !== undefined && targetSpecies !== null) {
+      if (!Array.isArray(targetSpecies)) {
+        return NextResponse.json({ error: "targetSpecies must be an array" }, { status: 400 });
+      }
+      for (const s of targetSpecies) {
+        if (typeof s !== "string" || s.trim() === "") {
+          return NextResponse.json({ error: "targetSpecies must contain only species IDs" }, { status: 400 });
+        }
+      }
+    }
+
+    let speciesIds: string[] = [];
+    if (Array.isArray(targetSpecies)) {
+      speciesIds = Array.from(new Set(targetSpecies as string[]));
+    }
 
     let parsedMaxParticipants: number | null = null;
     if (maxParticipants !== undefined && maxParticipants !== null) {
