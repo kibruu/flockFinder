@@ -31,7 +31,7 @@ During an active expedition for which the user is an attendee, the Field Compani
 17. As an Expedition Member, I want a one-click "Saw it too!" button on a checklist entry, so that I can record that I also observed that species.
 18. As an Expedition Member, I want "Saw it too!" to add the species to my own Life List, so that my personal list stays accurate without inflating anyone else's.
 19. As an Expedition Member, I want to see which checklist entries I have already verified, so that I do not verify them twice.
-20. As an Expedition Member, I want "Saw it too!" to work even when I am offline, so that I never miss verifying a species in bad coverage.
+20. As an Expedition Member, I want "Saw it too!" to work when I have connectivity, and to tell me clearly when it could not be recorded, so that I never silently miss verifying a species in bad coverage.
 21. As a Trip Host, I want the shared checklist to persist for the trip, so that a late-joining attendee can see the day's findings.
 22. As a Trip Host, I want the checklist to be read-only to confirmed attendees, so that only group members see our shared observations.
 23. As a Birder, I want to log a sighting with a location (hotspot/coordinates), so that it appears correctly on the interactive map.
