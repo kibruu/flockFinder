@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import type { TripDetail } from "@/types/trip";
 import { MessageThread } from "@/components/MessageThread";
+import { SharedChecklistTab } from "./shared-checklist-tab";
 
 interface TripDetailPaneProps {
   initialTrip: TripDetail;
@@ -28,7 +29,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
   const params = useParams();
   const router = useRouter();
   const [trip, setTrip] = useState<TripDetail | null>(initialTrip);
-  const [activeTab, setActiveTab] = useState<"details" | "carpools" | "attendees" | "chat">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "carpools" | "attendees" | "chat" | "checklist">("details");
   const [showCarpoolModal, setShowCarpoolModal] = useState(false);
 
   const handleRSVP = async (role: "SELF_DRIVE" | "PASSENGER") => {
@@ -307,7 +308,10 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
     { id: "carpools", label: "Carpools", icon: Car },
     { id: "attendees", label: "Attendees", icon: Users },
     ...(trip.currentUser.rsvp
-      ? ([{ id: "chat", label: "Trip Chat", icon: MessageSquare }] as const)
+      ? ([
+          { id: "checklist", label: "Checklist", icon: Bird },
+          { id: "chat", label: "Trip Chat", icon: MessageSquare },
+        ] as const)
       : []),
   ] as const;
 
@@ -750,6 +754,16 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                 ))}
               </div>
             </div>
+          )}
+
+          {activeTab === "checklist" && (
+            <SharedChecklistTab
+              tripId={params.id as string}
+              hotspotId={trip.hotspot?.id ?? ""}
+              hotspotName={trip.hotspot?.name ?? ""}
+              currentUserId={trip.currentUser.id}
+              targetSpecies={trip.targetSpecies}
+            />
           )}
 
           {activeTab === "chat" && (

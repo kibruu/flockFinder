@@ -2,7 +2,8 @@ import { Metadata } from "next";
 import { MapView } from "@/components/MapViewClient";
 import { db } from "@/lib/db";
 import { getSession, parseStringArray } from "@/lib/auth";
-import type { Hotspot, Sighting, Trip } from "@/components/MapView";
+import { loadRecentSightings } from "@/lib/sightings";
+import type { Hotspot, Trip } from "@/components/MapView";
 
 async function getHotspots(): Promise<Hotspot[]> {
   return db.hotspot.findMany({
@@ -19,65 +20,6 @@ async function getHotspots(): Promise<Hotspot[]> {
     },
     orderBy: { name: "asc" },
   });
-}
-
-async function getSightings(currentUserId?: string): Promise<Sighting[]> {
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-  const sightings = await db.sighting.findMany({
-    where: {
-      spottedAt: { gte: thirtyDaysAgo },
-    },
-    select: {
-      id: true,
-      speciesId: true,
-      userId: true,
-      hotspotId: true,
-      count: true,
-      notes: true,
-      latitude: true,
-      longitude: true,
-      spottedAt: true,
-      species: {
-        select: {
-          commonName: true,
-          scientificName: true,
-          category: true,
-          imageUrl: true,
-        },
-      },
-      user: {
-        select: {
-          name: true,
-        },
-      },
-      hotspot: {
-        select: {
-          name: true,
-        },
-      },
-    },
-    orderBy: { spottedAt: "desc" },
-    take: 500,
-  });
-
-  return sightings.map((s: typeof sightings[0]) => ({
-    id: s.id,
-    speciesId: s.speciesId,
-    speciesName: s.species.commonName,
-    speciesScientificName: s.species.scientificName,
-    speciesCategory: s.species.category,
-    speciesImageUrl: s.species.imageUrl,
-    userId: s.userId,
-    userName: s.user.name,
-    isCurrentUser: s.userId === currentUserId,
-    hotspotId: s.hotspotId,
-    hotspotName: s.hotspot.name,
-    count: s.count,
-    notes: s.notes,
-    latitude: s.latitude,
-    longitude: s.longitude,
-    spottedAt: s.spottedAt.toISOString(),
-  }));
 }
 
 async function getTrips(): Promise<Trip[]> {
@@ -158,7 +100,7 @@ export default async function MapPage() {
   const currentUserId = await getCurrentUserId();
   const [hotspots, sightings, trips] = await Promise.all([
     getHotspots(),
-    getSightings(currentUserId),
+    loadRecentSightings(currentUserId),
     getTrips(),
   ]);
 

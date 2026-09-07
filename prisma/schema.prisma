@@ -155,6 +155,9 @@ model Sighting {
   species  Species  @relation(fields: [speciesId], references: [id])
   hotspot  Hotspot  @relation(fields: [hotspotId], references: [id])
   trip     Trip?    @relation(fields: [tripId], references: [id])
+
+  @@index([tripId, spottedAt])
+  @@index([userId, speciesId])
 }
 
 model ChatMessage {
