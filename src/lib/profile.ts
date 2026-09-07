@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { getLifeListCount } from "./auth";
+import { getLifeListCount, parseStringArray } from "./auth";
 
 export interface LifeListSpecies {
   id: string;
@@ -118,7 +118,7 @@ export async function loadProfile(userId: string): Promise<ProfileData> {
   return {
     user: {
       ...user,
-      badges: JSON.parse(user.badges || "[]"),
+      badges: parseStringArray(user.badges),
       createdAt: user.createdAt.toISOString(),
     },
     lifeList,

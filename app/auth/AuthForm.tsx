@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Zap, Eye, EyeOff, Mail, Lock, User, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -20,6 +20,14 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
+
+  const redirectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) clearTimeout(redirectTimer.current);
+    };
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -65,14 +73,14 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
       const data = await res.json();
       if (!res.ok) {
         setErrors({ form: data.error || "Something went wrong" });
+        setLoading(false);
         return;
       }
 
       setSuccess(true);
-      setTimeout(() => router.push("/"), 1000);
+      redirectTimer.current = setTimeout(() => router.push("/"), 1000);
     } catch {
       setErrors({ form: "Network error. Please try again." });
-    } finally {
       setLoading(false);
     }
   };
@@ -87,6 +95,9 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
       });
       if (res.ok) {
         router.push("/");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setErrors({ form: data.error || "Failed to switch demo user" });
       }
     } catch {
       setErrors({ form: "Failed to switch demo user" });
@@ -198,6 +209,8 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-forest/40 hover:text-forest/60"
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}

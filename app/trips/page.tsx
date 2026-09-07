@@ -115,6 +115,7 @@ export default async function TripsPage({ searchParams }: { searchParams: Promis
   const params = await searchParams;
   const session = await getSession();
   const [data, catalog] = await Promise.all([getTrips(params), getCatalog()]);
+  const statusFilter = isTripStatus(params.status) ? params.status : "UPCOMING";
 
   return (
     <div className="min-h-screen bg-sandstone dark:bg-forest">
@@ -124,7 +125,7 @@ export default async function TripsPage({ searchParams }: { searchParams: Promis
         hotspots={catalog.hotspots}
         species={catalog.species}
         initialFilters={{
-          status: typeof params.status === "string" ? params.status : "UPCOMING",
+          status: statusFilter,
           hotspotId: typeof params.hotspotId === "string" ? params.hotspotId : "",
           speciesId: typeof params.speciesId === "string" ? params.speciesId : "",
           dateFrom: typeof params.dateFrom === "string" ? params.dateFrom : "",

@@ -212,16 +212,18 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
                 {editing ? (
                   <div className="space-y-4">
                     <div>
-                      <label className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">Full Name</label>
+                      <label htmlFor="profile-name" className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">Full Name</label>
                       <input
+                        id="profile-name"
                         value={editData.name}
                         onChange={(e) => setEditData({ ...editData, name: e.target.value })}
                         className="w-full px-4 py-2 rounded-lg border border-sage/30 dark:border-sage/600 bg-sandstone dark:bg-forest text-forest dark:text-sandstone focus:outline-none focus:ring-2 focus:ring-sage/50"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">Bio</label>
+                      <label htmlFor="profile-bio" className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">Bio</label>
                       <textarea
+                        id="profile-bio"
                         value={editData.bio}
                         onChange={(e) => setEditData({ ...editData, bio: e.target.value })}
                         rows={3}
@@ -230,8 +232,9 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">City</label>
+                      <label htmlFor="profile-city" className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">City</label>
                       <input
+                        id="profile-city"
                         value={editData.city}
                         onChange={(e) => setEditData({ ...editData, city: e.target.value })}
                         className="w-full px-4 py-2 rounded-lg border border-sage/30 dark:border-sage/600 bg-sandstone dark:bg-forest text-forest dark:text-sandstone focus:outline-none focus:ring-2 focus:ring-sage/50"
@@ -267,8 +270,9 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
                 {editing ? (
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div>
-                      <label className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">Vehicle Model</label>
+                      <label htmlFor="profile-vehicle-model" className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">Vehicle Model</label>
                       <input
+                        id="profile-vehicle-model"
                         value={editData.vehicleModel}
                         onChange={(e) => setEditData({ ...editData, vehicleModel: e.target.value })}
                         className="w-full px-4 py-2 rounded-lg border border-sage/30 dark:border-sage/600 bg-sandstone dark:bg-forest text-forest dark:text-sandstone focus:outline-none focus:ring-2 focus:ring-sage/50"
@@ -276,8 +280,9 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">Available Seats</label>
+                      <label htmlFor="profile-vehicle-seats" className="block text-sm font-medium text-forest/80 dark:text-sandstone/80 mb-1">Available Seats</label>
                       <input
+                        id="profile-vehicle-seats"
                         type="number"
                         min="0"
                         max="8"
@@ -311,7 +316,7 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
                     {user.badges.map((badge) => (
                       <span
                         key={badge}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber/100 dark:bg-amber/900/30 text-amber/800 dark:text-amber/200 text-sm font-medium"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber/20 dark:bg-amber/20 text-forest dark:text-sandstone text-sm font-medium"
                       >
                         <Award className="h-3.5 w-3.5" />
                         {badge}
@@ -329,7 +334,7 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-forest dark:text-sandstone">Life List</h3>
                   <span className="text-sm text-forest/60 dark:text-sandstone/60">
-                    {lifeList.length} species
+                    {lifeList.length === stats.lifeListCount ? `${lifeList.length} species` : `Top ${lifeList.length} of ${stats.lifeListCount}`}
                   </span>
                 </div>
                 {lifeList.length > 0 ? (
@@ -357,7 +362,7 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
                             {species.category} • {species.sightingCount} sighting(s) • Last seen at {species.hotspotName}
                           </p>
                         </div>
-                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-amber/100 dark:bg-amber/900/30 text-amber/800 dark:text-amber/200">
+                        <span className="px-2 py-1 text-xs font-medium rounded-full bg-amber/20 dark:bg-amber/20 text-forest dark:text-sandstone">
                           {new Date(species.lastSpotted).toLocaleDateString()}
                         </span>
                       </div>
