@@ -194,19 +194,12 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
         body: JSON.stringify({ offerId, passengerId }),
       });
       if (res.ok) {
+        const data = await res.json();
         setTrip((prev) =>
           prev
             ? {
                 ...prev,
-                carpoolOffers: prev.carpoolOffers.map((o) =>
-                  o.id === offerId
-                    ? {
-                        ...o,
-                        availableSeats: o.availableSeats + 1,
-                        bookings: o.bookings.filter((b) => b.passengerId !== passengerId),
-                      }
-                    : o
-                ),
+                carpoolOffers: prev.carpoolOffers.map((o) => (o.id === offerId ? data.offer : o)),
               }
             : null
         );
@@ -841,6 +834,7 @@ function CarpoolModal({
             <textarea
               name="notes"
               rows={2}
+              defaultValue={initial?.notes ?? ""}
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="e.g., Space for scopes. Leaving at 3 AM."
             />

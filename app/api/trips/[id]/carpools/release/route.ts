@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { releasePassengerBooking } from "../shared";
 
 export async function POST(
   request: NextRequest,
@@ -19,48 +20,72 @@ export async function POST(
       return NextResponse.json({ error: "Offer ID and passenger ID required" }, { status: 400 });
     }
 
-    const offer = await db.carpoolOffer.findUnique({
-      where: { id: offerId },
-      select: { id: true, tripId: true, driverId: true },
-    });
+    try {
+      const offer = await db.$transaction(async (tx) => {
+        const trip = await tx.trip.findUnique({ where: { id }, select: { id: true, status: true } });
+        if (!trip || trip.status !== "UPCOMING") {
+          throw new Error("trip-not-upcoming");
+        }
 
-    if (!offer || offer.tripId !== id) {
-      return NextResponse.json({ error: "Carpool offer not found" }, { status: 404 });
+        const target = await tx.carpoolOffer.findUnique({
+          where: { id: offerId },
+          select: { id: true, tripId: true, driverId: true },
+        });
+        if (!target || target.tripId !== id) {
+          throw new Error("offer-not-found");
+        }
+        if (target.driverId !== session.id) {
+          throw new Error("not-driver");
+        }
+        if (target.driverId === passengerId) {
+          throw new Error("release-driver");
+        }
+
+        const booking = await tx.carpoolBooking.findUnique({
+          where: { offerId_passengerId: { offerId, passengerId } },
+        });
+        if (!booking || booking.status !== "CONFIRMED") {
+          throw new Error("booking-not-found");
+        }
+
+        await releasePassengerBooking(tx, booking.id, offerId);
+
+        return tx.carpoolOffer.findUnique({
+          where: { id: offerId },
+          include: {
+            driver: { select: { id: true, name: true, avatarUrl: true, vehicleModel: true, vehicleSeats: true } },
+            bookings: {
+              include: { passenger: { select: { id: true, name: true, avatarUrl: true } } },
+              where: { status: "CONFIRMED" },
+            },
+          },
+        });
+      });
+
+      if (!offer) {
+        return NextResponse.json({ error: "Carpool offer not found" }, { status: 404 });
+      }
+
+      return NextResponse.json({ offer });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message === "trip-not-upcoming") {
+        return NextResponse.json({ error: "Trip not found or not upcoming" }, { status: 404 });
+      }
+      if (message === "offer-not-found") {
+        return NextResponse.json({ error: "Carpool offer not found" }, { status: 404 });
+      }
+      if (message === "not-driver") {
+        return NextResponse.json({ error: "Only the driver can release a passenger" }, { status: 403 });
+      }
+      if (message === "release-driver") {
+        return NextResponse.json({ error: "Cannot release the driver's own seat" }, { status: 400 });
+      }
+      if (message === "booking-not-found") {
+        return NextResponse.json({ error: "Passenger booking not found" }, { status: 404 });
+      }
+      throw error;
     }
-
-    if (offer.driverId !== session.id) {
-      return NextResponse.json({ error: "Only the driver can release a passenger" }, { status: 403 });
-    }
-
-    if (offer.driverId === passengerId) {
-      return NextResponse.json({ error: "Cannot release the driver's own seat" }, { status: 400 });
-    }
-
-    const trip = await db.trip.findUnique({
-      where: { id },
-      select: { id: true, status: true },
-    });
-    if (!trip || trip.status !== "UPCOMING") {
-      return NextResponse.json({ error: "Trip not found or not upcoming" }, { status: 404 });
-    }
-
-    const booking = await db.carpoolBooking.findUnique({
-      where: { offerId_passengerId: { offerId, passengerId } },
-    });
-
-    if (!booking || booking.status !== "CONFIRMED") {
-      return NextResponse.json({ error: "Passenger booking not found" }, { status: 404 });
-    }
-
-    await db.$transaction([
-      db.carpoolBooking.delete({ where: { id: booking.id } }),
-      db.carpoolOffer.update({
-        where: { id: offerId },
-        data: { availableSeats: { increment: 1 } },
-      }),
-    ]);
-
-    return NextResponse.json({ success: true });
   } catch (error) {
     console.error("Carpool release error:", error);
     return NextResponse.json({ error: "Failed to release passenger" }, { status: 500 });

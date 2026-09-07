@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { releasePassengerBooking } from "../shared";
 
 export async function POST(
   request: NextRequest,
@@ -40,13 +41,7 @@ export async function POST(
       return NextResponse.json({ error: "Booking is not confirmed" }, { status: 400 });
     }
 
-    await db.$transaction([
-      db.carpoolBooking.delete({ where: { id: booking.id } }),
-      db.carpoolOffer.update({
-        where: { id: offerId },
-        data: { availableSeats: { increment: 1 } },
-      }),
-    ]);
+    await db.$transaction(async (tx) => releasePassengerBooking(tx, booking.id, offerId));
 
     return NextResponse.json({ success: true });
   } catch (error) {
