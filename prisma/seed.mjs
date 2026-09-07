@@ -174,6 +174,12 @@ async function main() {
   }
   console.log(`✅ Created ${speciesData.length} species`);
 
+  const speciesByName = new Map(
+    (await prisma.species.findMany({ select: { id: true, commonName: true } })).map((s) => [s.commonName, s.id])
+  );
+  const toSpeciesIds = (names) =>
+    JSON.stringify(names.map((name) => speciesByName.get(name)).filter(Boolean));
+
   const hotspotsData = [
     { name: "Cape May Wetland Reserve", description: "World-renowned migration hotspot. Spring and fall bring massive numbers of warblers, raptors, and shorebirds.", locationName: "Cape May Point, NJ", latitude: 38.9333, longitude: -74.9667, habitatType: "Wetland", amenities: "Boardwalks, observation towers, visitor center, restrooms, hawkwatch platform", coverImage: "https://cdn.birdphotoworld.com/cape-may.jpg" },
     { name: "Central Park Ramble", description: "Urban oasis in Manhattan. 230+ species recorded. Best during spring migration for warblers, tanagers, and flycatchers.", locationName: "Manhattan, NY", latitude: 40.7829, longitude: -73.9654, habitatType: "Forest", amenities: "Walking paths, benches, nearby cafes, restrooms, Belvedere Castle", coverImage: "https://cdn.birdphotoworld.com/central-park.jpg" },
@@ -236,10 +242,10 @@ async function main() {
   const reifel = hotspots.find(h => h.name === "Reifel Bird Sanctuary");
 
   const trip1 = await prisma.trip.upsert({
-    where: { id: "trip-1" },
-    update: {},
-    create: {
-      id: "trip-1",
+where: { id: "trip-1" },
+      update: { targetSpecies: toSpeciesIds(["Bald Eagle", "Peregrine Falcon", "Belted Kingfisher", "Cedar Waxwing", "Yellow Warbler", "Blackburnian Warbler"]) },
+      create: {
+        id: "trip-1",
       title: "Cape May Spring Migration Spectacular",
       description: "Join us for a dawn-to-dusk birding marathon at the legendary Cape May. Target: 20+ warbler species, raptors, shorebirds. Meet at the Hawkwatch Platform at 6:00 AM.",
       hostId: elena.id,
@@ -247,17 +253,17 @@ async function main() {
       date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       meetingTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000),
       meetingPoint: "Hawkwatch Platform, Cape May Point State Park",
-      targetSpecies: JSON.stringify(["Bald Eagle", "Peregrine Falcon", "Belted Kingfisher", "Cedar Waxwing", "Yellow Warbler", "Blackburnian Warbler"]),
+      targetSpecies: toSpeciesIds(["Bald Eagle", "Peregrine Falcon", "Belted Kingfisher", "Cedar Waxwing", "Yellow Warbler", "Blackburnian Warbler"]),
       maxParticipants: 12,
       status: "UPCOMING",
     },
   });
 
   const trip2 = await prisma.trip.upsert({
-    where: { id: "trip-2" },
-    update: {},
-    create: {
-      id: "trip-2",
+where: { id: "trip-2" },
+      update: { targetSpecies: toSpeciesIds(["Cedar Waxwing", "Belted Kingfisher", "American Redstart", "Ovenbird"]) },
+      create: {
+        id: "trip-2",
       title: "Central Park Warbler Walk",
       description: "Leisurely morning walk through the Ramble during peak spring migration. Perfect for beginners! Target: 15+ warbler species, Scarlet Tanager, Wood Thrush.",
       hostId: elena.id,
@@ -265,17 +271,17 @@ async function main() {
       date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
       meetingTime: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000 + 7 * 60 * 60 * 1000),
       meetingPoint: "Belvedere Castle, Central Park",
-      targetSpecies: JSON.stringify(["Cedar Waxwing", "Belted Kingfisher", "American Redstart", "Ovenbird"]),
+      targetSpecies: toSpeciesIds(["Cedar Waxwing", "Belted Kingfisher", "American Redstart", "Ovenbird"]),
       maxParticipants: 8,
       status: "UPCOMING",
     },
   });
 
   const trip3 = await prisma.trip.upsert({
-    where: { id: "trip-3" },
-    update: {},
-    create: {
-      id: "trip-3",
+where: { id: "trip-3" },
+      update: { targetSpecies: toSpeciesIds(["Cedar Waxwing", "Painted Bunting", "Pileated Woodpecker", "Blackburnian Warbler", "Yellow Warbler"]) },
+      create: {
+        id: "trip-3",
       title: "Point Pelee Fallout Expedition",
       description: "Multi-day trip to witness the legendary spring migration fallout. Early mornings at the tip, afternoons exploring trails. Target: 25+ warbler species.",
       hostId: elena.id,
@@ -283,17 +289,17 @@ async function main() {
       date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
       meetingTime: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000 + 5 * 60 * 60 * 1000),
       meetingPoint: "Point Pelee National Park Visitor Center",
-      targetSpecies: JSON.stringify(["Cedar Waxwing", "Painted Bunting", "Pileated Woodpecker", "Blackburnian Warbler", "Yellow Warbler"]),
+      targetSpecies: toSpeciesIds(["Cedar Waxwing", "Painted Bunting", "Pileated Woodpecker", "Blackburnian Warbler", "Yellow Warbler"]),
       maxParticipants: 10,
       status: "UPCOMING",
     },
   });
 
   const trip4 = await prisma.trip.upsert({
-    where: { id: "trip-4" },
-    update: {},
-    create: {
-      id: "trip-4",
+where: { id: "trip-4" },
+      update: { targetSpecies: toSpeciesIds(["Great Blue Heron", "Great Egret", "Snowy Egret", "Green Heron"]) },
+      create: {
+        id: "trip-4",
       title: "Everglades Wading Bird Bonanza",
       description: "Explore the River of Grass for Roseate Spoonbills, Wood Storks, Snail Kites, and dozens of heron/egret species. Boat tour included.",
       hostId: elena.id,
@@ -301,17 +307,17 @@ async function main() {
       date: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
       meetingTime: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000),
       meetingPoint: "Ernest Coe Visitor Center",
-      targetSpecies: JSON.stringify(["Great Blue Heron", "Great Egret", "Snowy Egret", "Green Heron"]),
+      targetSpecies: toSpeciesIds(["Great Blue Heron", "Great Egret", "Snowy Egret", "Green Heron"]),
       maxParticipants: 15,
       status: "UPCOMING",
     },
   });
 
   const trip5 = await prisma.trip.upsert({
-    where: { id: "trip-5" },
-    update: {},
-    create: {
-      id: "trip-5",
+where: { id: "trip-5" },
+      update: { targetSpecies: toSpeciesIds(["Yellow Warbler", "Yellow-rumped Warbler", "Black-and-white Warbler", "American Redstart", "Blackburnian Warbler", "Common Yellowthroat"]) },
+      create: {
+        id: "trip-5",
       title: "Magee Marsh Warbler Week",
       description: "The ultimate warbler experience! Walk the famous boardwalk during peak migration. 30+ warbler species possible.",
       hostId: elena.id,
@@ -319,7 +325,7 @@ async function main() {
       date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000),
       meetingTime: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000 + 6 * 60 * 60 * 1000),
       meetingPoint: "Magee Marsh Boardwalk Entrance",
-      targetSpecies: JSON.stringify(["Yellow Warbler", "Yellow-rumped Warbler", "Black-and-white Warbler", "American Redstart", "Blackburnian Warbler", "Common Yellowthroat"]),
+      targetSpecies: toSpeciesIds(["Yellow Warbler", "Yellow-rumped Warbler", "Black-and-white Warbler", "American Redstart", "Blackburnian Warbler", "Common Yellowthroat"]),
       maxParticipants: 12,
       status: "UPCOMING",
     },
@@ -329,7 +335,7 @@ async function main() {
 
   await prisma.carpoolOffer.upsert({
     where: { id: "carpool-1" },
-    update: {},
+    update: { availableSeats: 3 },
     create: {
       id: "carpool-1",
       tripId: trip1.id,
@@ -337,7 +343,7 @@ async function main() {
       originArea: "Philadelphia, PA — 30th Street Station",
       departureTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000 + 3 * 60 * 60 * 1000),
       totalSeats: 3,
-      availableSeats: 2,
+      availableSeats: 3,
       notes: "Space for backpacks and scopes. Leaving promptly at 3:00 AM.",
     },
   });

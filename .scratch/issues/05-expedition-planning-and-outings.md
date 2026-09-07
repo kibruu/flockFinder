@@ -1,7 +1,7 @@
-﻿# 05 Expedition Planning and Outings
+# 05 Expedition Planning and Outings
 
 Type: task
-Status: open
+Status: closed
 Blocked by: 01, 02, 03
 
 ## Question

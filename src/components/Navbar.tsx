@@ -3,14 +3,13 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, useDemoSwitch } from "@/hooks/useAuth";
-import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, MessageSquare, Zap } from "lucide-react";
+import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Zap } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/trips", label: "Trips & Carpools", icon: LayoutDashboard },
   { href: "/map", label: "Field Map", icon: MapPin },
   { href: "/species", label: "Species Catalog", icon: BookOpen },
   { href: "/hotspots", label: "Hotspots", icon: MapPin },
-  { href: "/messages", label: "Messages", icon: MessageSquare },
 ];
 
 export function Navbar() {

@@ -1,7 +1,7 @@
-﻿# 02 Naturalist Catalog and Seed Data
+# 02 Naturalist Catalog and Seed Data
 
 Type: task
-Status: open
+Status: closed
 Blocked by: 01
 
 ## Question
