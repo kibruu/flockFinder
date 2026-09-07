@@ -39,8 +39,8 @@ export async function POST(
     let carpool;
     try {
       carpool = await db.$transaction(async (tx) => {
-        const existingOffer = await tx.carpoolOffer.findUnique({
-          where: { id: `carpool-${id}-${session.id}` },
+        const existingOffer = await tx.carpoolOffer.findFirst({
+          where: { tripId: id, driverId: session.id },
           select: { id: true, bookings: { where: { status: "CONFIRMED" }, select: { id: true } } },
         });
 
@@ -96,8 +96,8 @@ export async function POST(
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       if (message === "seats-below-bookings") {
-        const offer = await db.carpoolOffer.findUnique({
-          where: { id: `carpool-${id}-${session.id}` },
+        const offer = await db.carpoolOffer.findFirst({
+          where: { tripId: id, driverId: session.id },
           select: { bookings: { where: { status: "CONFIRMED" }, select: { id: true } } },
         });
         const confirmedBookings = offer?.bookings.length ?? 0;
@@ -113,5 +113,68 @@ export async function POST(
   } catch (error) {
     console.error("Carpool creation error:", error);
     return NextResponse.json({ error: "Failed to create carpool" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const { offerId } = await request.json();
+
+    if (!offerId) {
+      return NextResponse.json({ error: "Offer ID required" }, { status: 400 });
+    }
+
+    try {
+      await db.$transaction(async (tx) => {
+        const trip = await tx.trip.findUnique({ where: { id }, select: { id: true, status: true } });
+        if (!trip || trip.status !== "UPCOMING") {
+          throw new Error("trip-not-upcoming");
+        }
+
+        const offer = await tx.carpoolOffer.findUnique({
+          where: { id: offerId },
+          select: { id: true, tripId: true, driverId: true },
+        });
+        if (!offer || offer.tripId !== id) {
+          throw new Error("offer-not-found");
+        }
+        if (offer.driverId !== session.id) {
+          throw new Error("not-driver");
+        }
+
+        await tx.carpoolBooking.deleteMany({ where: { offerId } });
+        await tx.carpoolOffer.delete({ where: { id: offerId } });
+        await tx.tripRsvp.updateMany({
+          where: { tripId: id, userId: session.id, role: "DRIVER" },
+          data: { role: "SELF_DRIVE" },
+        });
+      });
+
+      return NextResponse.json({ success: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (message === "trip-not-upcoming") {
+        return NextResponse.json({ error: "Trip not found or not upcoming" }, { status: 404 });
+      }
+      if (message === "offer-not-found") {
+        return NextResponse.json({ error: "Carpool offer not found" }, { status: 404 });
+      }
+      if (message === "not-driver") {
+        return NextResponse.json({ error: "Only the driver can withdraw this carpool" }, { status: 403 });
+      }
+      throw error;
+    }
+  } catch (error) {
+    console.error("Carpool withdrawal error:", error);
+    return NextResponse.json({ error: "Failed to withdraw carpool" }, { status: 500 });
   }
 }

@@ -78,10 +78,20 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
           prev
             ? {
                 ...prev,
-                carpoolOffers: [...prev.carpoolOffers, result.carpool],
+                carpoolOffers: prev.carpoolOffers.some((o) => o.id === result.carpool.id)
+                  ? prev.carpoolOffers.map((o) => (o.id === result.carpool.id ? result.carpool : o))
+                  : [...prev.carpoolOffers, result.carpool],
+                rsvps: prev.rsvps.map((r) =>
+                  r.userId === prev.currentUser.id && r.role === "SELF_DRIVE"
+                    ? { ...r, role: "DRIVER" as const }
+                    : r
+                ),
                 currentUser: {
                   ...prev.currentUser,
-                  rsvp: prev.currentUser.rsvp || { role: "DRIVER", createdAt: new Date().toISOString() },
+                  rsvp:
+                    prev.currentUser.rsvp?.role === "SELF_DRIVE"
+                      ? { role: "DRIVER", createdAt: prev.currentUser.rsvp.createdAt }
+                      : prev.currentUser.rsvp || { role: "DRIVER", createdAt: new Date().toISOString() },
                   carpoolOffer: { id: result.carpool.id, availableSeats: result.carpool.availableSeats },
                 },
               }
@@ -180,6 +190,72 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
     }
   };
 
+  const handleCarpoolRelease = async (offerId: string, passengerId: string) => {
+    if (!trip) return;
+    try {
+      const res = await fetch(`/api/trips/${params.id}/carpools/release`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId, passengerId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTrip((prev) =>
+          prev
+            ? {
+                ...prev,
+                carpoolOffers: prev.carpoolOffers.map((o) => (o.id === offerId ? data.offer : o)),
+              }
+            : null
+        );
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to release passenger");
+      }
+    } catch {
+      alert("Network error");
+    }
+  };
+
+  const handleCarpoolWithdraw = async (offerId: string) => {
+    if (!trip || !confirm("Withdraw this carpool offer? Confirmed passengers will be released.")) return;
+    try {
+      const res = await fetch(`/api/trips/${params.id}/carpools`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ offerId }),
+      });
+      if (res.ok) {
+        setTrip((prev) =>
+          prev
+            ? {
+                ...prev,
+                carpoolOffers: prev.carpoolOffers.filter((o) => o.id !== offerId),
+                rsvps: prev.rsvps.map((r) =>
+                  r.userId === prev.currentUser.id && r.role === "DRIVER"
+                    ? { ...r, role: "SELF_DRIVE" as const }
+                    : r
+                ),
+                currentUser: {
+                  ...prev.currentUser,
+                  rsvp:
+                    prev.currentUser.rsvp?.role === "DRIVER"
+                      ? { role: "SELF_DRIVE", createdAt: prev.currentUser.rsvp.createdAt }
+                      : prev.currentUser.rsvp,
+                  carpoolOffer: null,
+                },
+              }
+            : null
+        );
+      } else {
+        const err = await res.json();
+        alert(err.error || "Failed to withdraw carpool");
+      }
+    } catch {
+      alert("Network error");
+    }
+  };
+
   const handleTripCancel = async () => {
     if (!trip || !confirm("Are you sure you want to cancel this trip? All carpool bookings will be released.")) return;
     try {
@@ -219,7 +295,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
   const meetingTime = new Date(trip.meetingTime);
   const isHost = trip.host?.id === trip.currentUser.id;
   const userRole = trip.currentUser.rsvp?.role;
-  const canOfferCarpool = (userRole === "DRIVER" || userRole === "SELF_DRIVE" || userRole === "HOST") && !trip.currentUser.carpoolOffer;
+  const canManageCarpool = userRole === "DRIVER" || userRole === "SELF_DRIVE" || userRole === "HOST";
+  const hasCarpoolOffer = Boolean(trip.currentUser.carpoolOffer);
+  const editingOffer = hasCarpoolOffer
+    ? (trip.carpoolOffers.find((o) => o.id === trip.currentUser.carpoolOffer?.id) ?? null)
+    : null;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -348,13 +428,13 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                     </button>
                   </>
                 )}
-                {trip.status === "UPCOMING" && canOfferCarpool && (
+                {trip.status === "UPCOMING" && canManageCarpool && (
                   <button
                     onClick={() => setShowCarpoolModal(true)}
                     className="w-full py-2.5 px-4 rounded-lg bg-teal-600 text-white font-medium hover:bg-teal-700 transition-colors"
                     type="button"
                   >
-                    Offer a Carpool
+                    {hasCarpoolOffer ? "Edit Carpool" : "Offer a Carpool"}
                   </button>
                 )}
                 {trip.status === "UPCOMING" &&
@@ -484,13 +564,13 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Carpool Offers</h3>
-                {canOfferCarpool && (
+                {canManageCarpool && (
                   <button
                     onClick={() => setShowCarpoolModal(true)}
                     className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 text-sm font-medium"
                     type="button"
                   >
-                    + Offer Carpool
+                    {hasCarpoolOffer ? "Edit Carpool" : "+ Offer Carpool"}
                   </button>
                 )}
               </div>
@@ -542,6 +622,16 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                                 >
                                   <Users className="h-3 w-3" />
                                   {b.passenger.name}
+                                  {offer.driverId === trip.currentUser.id && (
+                                    <button
+                                      onClick={() => handleCarpoolRelease(offer.id, b.passengerId)}
+                                      className="ml-0.5 p-0.5 rounded hover:bg-red-100 dark:hover:bg-red-900/40 text-gray-400 hover:text-red-600 dark:hover:text-red-400"
+                                      type="button"
+                                      aria-label={`Release ${b.passenger.name}`}
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  )}
                                 </span>
                               ))}
                             </div>
@@ -555,9 +645,16 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                             <p className="text-xs text-teal-600 dark:text-teal-400">
                               / {offer.totalSeats} seats
                             </p>
+                            <CapacityBar availableSeats={offer.availableSeats} totalSeats={offer.totalSeats} />
                           </div>
                           {offer.driverId === trip.currentUser.id ? (
-                            <span className="text-xs text-gray-400 dark:text-gray-500">Your carpool</span>
+                            <button
+                              onClick={() => handleCarpoolWithdraw(offer.id)}
+                              className="text-xs text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 font-medium"
+                              type="button"
+                            >
+                              Withdraw Carpool
+                            </button>
                           ) : trip.currentUser.carpoolBooking?.offerId === offer.id ? (
                             <button
                               onClick={() => handleCarpoolCancel(offer.id)}
@@ -646,6 +743,16 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
         <CarpoolModal
           onClose={() => setShowCarpoolModal(false)}
           onSubmit={handleCarpoolCreate}
+          initial={
+            editingOffer
+              ? {
+                  originArea: editingOffer.originArea,
+                  departureTime: editingOffer.departureTime,
+                  totalSeats: editingOffer.totalSeats,
+                  notes: editingOffer.notes ?? "",
+                }
+              : null
+          }
         />
       )}
     </div>
@@ -655,9 +762,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
 function CarpoolModal({
   onClose,
   onSubmit,
+  initial,
 }: {
   onClose: () => void;
   onSubmit: (data: { originArea: string; departureTime: string; totalSeats: number; notes: string }) => void;
+  initial?: { originArea: string; departureTime: string; totalSeats: number; notes: string } | null;
 }) {
   const [submitting, setSubmitting] = useState(false);
 
@@ -666,9 +775,13 @@ function CarpoolModal({
     setSubmitting(true);
     try {
       const form = new FormData(e.currentTarget);
+      const departureTimeRaw = form.get("departureTime") as string;
       await onSubmit({
         originArea: form.get("originArea") as string,
-        departureTime: form.get("departureTime") as string,
+        departureTime:
+          initial && departureTimeRaw === toDatetimeLocalValue(initial.departureTime)
+            ? initial.departureTime
+            : toIsoInstant(departureTimeRaw),
         totalSeats: parseInt(form.get("totalSeats") as string),
         notes: (form.get("notes") as string) || "",
       });
@@ -681,7 +794,9 @@ function CarpoolModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl max-w-md w-full">
         <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Offer Carpool</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+            {initial ? "Edit Carpool" : "Offer Carpool"}
+          </h2>
           <button
             onClick={onClose}
             className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -697,6 +812,7 @@ function CarpoolModal({
               name="originArea"
               type="text"
               required
+              defaultValue={initial?.originArea ?? ""}
               placeholder="e.g., Philadelphia - 30th Street Station"
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
@@ -710,6 +826,7 @@ function CarpoolModal({
                 name="departureTime"
                 type="datetime-local"
                 required
+                defaultValue={initial ? toDatetimeLocalValue(initial.departureTime) : ""}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
@@ -721,7 +838,7 @@ function CarpoolModal({
                 min="1"
                 max="8"
                 required
-                defaultValue="3"
+                defaultValue={String(initial?.totalSeats ?? 3)}
                 className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
@@ -731,6 +848,7 @@ function CarpoolModal({
             <textarea
               name="notes"
               rows={2}
+              defaultValue={initial?.notes ?? ""}
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
               placeholder="e.g., Space for scopes. Leaving at 3 AM."
             />
@@ -749,11 +867,39 @@ function CarpoolModal({
               className="flex-1 px-4 py-2.5 rounded-lg bg-teal-600 text-white font-medium hover:bg-teal-700 transition-colors disabled:opacity-50"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin inline-block mr-2" /> : null}
-              Create Carpool
+              {initial ? "Save Carpool" : "Create Carpool"}
             </button>
           </div>
         </form>
       </div>
     </div>
   );
+}
+
+function CapacityBar({ availableSeats, totalSeats }: { availableSeats: number; totalSeats: number }) {
+  const safe = Math.max(0, availableSeats);
+  const occupancy = totalSeats <= 0 ? 0 : Math.round(((totalSeats - safe) / totalSeats) * 100);
+  const full = safe <= 0;
+  return (
+    <div
+      role="img"
+      aria-label={`${safe} of ${totalSeats} seats available`}
+      className="mt-2 w-24 h-1.5 mx-auto rounded-full bg-gray-200 dark:bg-gray-600 overflow-hidden"
+    >
+      <div
+        className={full ? "h-full bg-gray-400 dark:bg-gray-500" : "h-full bg-teal-500"}
+        style={{ width: `${occupancy}%` }}
+      />
+    </div>
+  );
+}
+
+function toDatetimeLocalValue(iso: string): string {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function toIsoInstant(localValue: string): string {
+  return new Date(localValue).toISOString();
 }
