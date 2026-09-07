@@ -3,6 +3,7 @@ import { TripsExplorer } from "./trips-explorer";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import type { TripListItem } from "@/types/trip";
+import { isTripStatus, parseTripStatus } from "@/types/domain";
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -34,7 +35,7 @@ async function getTrips(searchParams: SearchParams) {
   const dateTo = dateToRaw && !isNaN(new Date(dateToRaw).getTime()) ? new Date(`${dateToRaw}T23:59:59`) : null;
 
   const where: Record<string, unknown> = {};
-  if (status && status !== "ALL") where.status = status;
+  if (isTripStatus(status)) where.status = status;
   if (hotspotId) where.hotspotId = hotspotId;
   if (speciesId) where.targetSpecies = { contains: `"${speciesId}"` };
   if (dateFrom || dateTo) {
@@ -92,7 +93,7 @@ async function getTrips(searchParams: SearchParams) {
       .map((id) => speciesMap.get(id))
       .filter(Boolean) as { id: string; commonName: string; imageUrl: string | null }[],
     maxParticipants: trip.maxParticipants,
-    status: trip.status,
+    status: parseTripStatus(trip.status, "UPCOMING"),
     host: trip.host,
     hotspot: trip.hotspot,
     rsvpCount: trip._count.rsvps,

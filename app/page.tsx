@@ -3,6 +3,7 @@ import { Bird, CalendarDays, Car, Compass, PlusCircle, ArrowRight } from "lucide
 import { db } from "@/lib/db";
 import { TripCard } from "@/components/TripCard";
 import type { TripListItem } from "@/types/trip";
+import { parseTripStatus } from "@/types/domain";
 
 export const metadata = {
   title: "FlockFinder — Meetup + Strava for Birders",
@@ -92,7 +93,7 @@ async function getUpcomingTrips(): Promise<TripListItem[]> {
       .map((id) => speciesMap.get(id))
       .filter(Boolean) as { id: string; commonName: string; imageUrl: string | null }[],
     maxParticipants: trip.maxParticipants,
-    status: trip.status,
+    status: parseTripStatus(trip.status, "UPCOMING"),
     host: trip.host,
     hotspot: trip.hotspot,
     rsvpCount: trip._count.rsvps,
