@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { isTripStatus, parseTripRsvpRole } from "@/types/domain";
+
+const SELF_RSVP_ROLES = ["SELF_DRIVE", "PASSENGER", "DRIVER"] as const;
 
 export async function POST(
   request: NextRequest,
@@ -15,7 +18,8 @@ export async function POST(
     const { id } = await params;
     const { role } = await request.json();
 
-    if (!role || !["SELF_DRIVE", "PASSENGER", "DRIVER"].includes(role)) {
+    const parsedRole = parseTripRsvpRole(role);
+    if (!parsedRole || !(SELF_RSVP_ROLES as readonly string[]).includes(parsedRole)) {
       return NextResponse.json({ error: "Invalid role. Use SELF_DRIVE, PASSENGER, or DRIVER." }, { status: 400 });
     }
 
@@ -28,7 +32,7 @@ export async function POST(
       return NextResponse.json({ error: "Trip not found" }, { status: 404 });
     }
 
-    if (trip.status !== "UPCOMING") {
+    if (!isTripStatus(trip.status) || trip.status !== "UPCOMING") {
       return NextResponse.json({ error: "Cannot RSVP to a non-upcoming trip" }, { status: 400 });
     }
 
@@ -46,8 +50,8 @@ export async function POST(
         }
         return tx.tripRsvp.upsert({
           where: { tripId_userId: { tripId: id, userId: session.id } },
-          update: { role },
-          create: { tripId: id, userId: session.id, role },
+          update: { role: parsedRole },
+          create: { tripId: id, userId: session.id, role: parsedRole },
         });
       });
 
