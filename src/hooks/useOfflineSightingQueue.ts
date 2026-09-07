@@ -93,8 +93,9 @@ export function useOfflineSightingQueue(userId: string | null) {
             if (res.ok && data && typeof data.sighting?.id === "string") {
               continue;
             }
-            // Non-retryable (validation) -> drop; transient/network -> keep & retry
-            if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+            // Permanent (validation/authz) -> drop; transient -> keep & retry.
+            // 401 is retryable after re-authentication; 429 retries on backoff.
+            if (res.status >= 400 && res.status < 500 && res.status !== 401 && res.status !== 429) {
               continue;
             }
             remaining.push(item);

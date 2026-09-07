@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ChecklistEntry } from "@/lib/sightings";
 
 const POLL_INTERVAL_MS = 4000;
@@ -11,6 +11,9 @@ const POLL_INTERVAL_MS = 4000;
 export function useLiveChecklist(url: string, enabled: boolean) {
   const [entries, setEntries] = useState<ChecklistEntry[]>([]);
   const [loading, setLoading] = useState(enabled);
+  // Bumped by local mutations so an in-flight poll response that predates a
+  // local "Saw it too!" upsert is discarded instead of clobbering it.
+  const revisionRef = useRef(0);
 
   useEffect(() => {
     if (!enabled) return;
@@ -24,12 +27,14 @@ export function useLiveChecklist(url: string, enabled: boolean) {
       if (!active || polling || document.hidden) return;
       polling = true;
       controller = new AbortController();
+      const startedRevision = revisionRef.current;
       try {
         const res = await fetch(url, { signal: controller.signal });
         if (!active) return;
         if (res.ok) {
           const data = await res.json();
           if (!active) return;
+          if (revisionRef.current !== startedRevision) return;
           setEntries(Array.isArray(data.entries) ? data.entries : []);
           setLoading(false);
         }
@@ -61,6 +66,7 @@ export function useLiveChecklist(url: string, enabled: boolean) {
 
   // Upsert a single refreshed entry (e.g. right after "Saw it too!") in place.
   const upsertEntry = useCallback((entry: ChecklistEntry) => {
+    revisionRef.current += 1;
     setEntries((prev) => {
       const exists = prev.some((e) => e.speciesId === entry.speciesId);
       if (exists) {

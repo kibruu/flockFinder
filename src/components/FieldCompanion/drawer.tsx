@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, Minus, Plus, Camera, Binoculars, Loader2, CheckCircle, CloudOff } from "lucide-react";
 import type {
   SpeciesOption,
@@ -54,6 +54,23 @@ export function FieldCompanion({
       return hotspots.length > 0 ? hotspots[0].id : "";
     });
   }, [hotspots, scope]);
+
+  // After a successful log, clear the draft so "Log Another" starts fresh.
+  const prevResultKindRef = useRef<string | null>(null);
+  useEffect(() => {
+    const kind = result?.kind ?? null;
+    if (prevResultKindRef.current === "success" || kind !== "success") {
+      prevResultKindRef.current = kind;
+      return;
+    }
+    prevResultKindRef.current = kind;
+    setSpeciesId("");
+    setQuery("");
+    setCount(1);
+    setNotes("");
+    setPhotoUrl("");
+    setHotspotId(scope ? scope.hotspotId : hotspots.length > 0 ? hotspots[0].id : "");
+  }, [result, scope, hotspots]);
 
   const resolved = useMemo(() => {
     const chosen = species.find((s) => s.id === speciesId) ?? null;

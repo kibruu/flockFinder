@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     const speciesId = typeof body?.speciesId === "string" ? body.speciesId : "";
     const hotspotId = typeof body?.hotspotId === "string" ? body.hotspotId : "";
     const tripId = typeof body?.tripId === "string" && body.tripId.length > 0 ? body.tripId : null;
-    const count = typeof body?.count === "number" ? Math.floor(body.count) : NaN;
+    const count = typeof body?.count === "number" && Number.isInteger(body.count) ? body.count : NaN;
     const notes = normalizeNotes(body?.notes);
     const photoUrl = typeof body?.photoUrl === "string" && body.photoUrl.trim().length > 0 ? body.photoUrl.trim() : null;
 
@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Hotspot is required" }, { status: 400 });
     }
     if (!Number.isInteger(count) || count < 1 || count > 1000) {
-      return NextResponse.json({ error: "Count must be between 1 and 1000" }, { status: 400 });
+      return NextResponse.json({ error: "Count must be a whole number between 1 and 1000" }, { status: 400 });
     }
 
     if (photoUrl && !isValidPhotoUrl(photoUrl)) {
@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
 
     const latitude = typeof body?.latitude === "number" ? body.latitude : NaN;
     const longitude = typeof body?.longitude === "number" ? body.longitude : NaN;
-    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-      return NextResponse.json({ error: "Valid latitude and longitude are required" }, { status: 400 });
+    if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90 || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+      return NextResponse.json({ error: "Valid latitude (-90..90) and longitude (-180..180) are required" }, { status: 400 });
     }
 
     if (tripId) {
