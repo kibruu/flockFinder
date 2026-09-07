@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as L from "leaflet";
-import { ensureMarkerCluster } from "@/lib/leafletWithCluster";
+import { ensureMarkerCluster, createClusterLayer } from "@/lib/leafletWithCluster";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair } from "lucide-react";
 
@@ -248,7 +248,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     void ensureMarkerCluster().then(() => {
       if (!mapInstanceRef.current) return;
 
-      layersRef.current.sightings = L.markerClusterGroup({
+      layersRef.current.sightings = createClusterLayer({
         iconCreateFunction: (cluster) => createClusterIcon(cluster.getChildCount(), LAYER_COLORS.sightings),
         spiderfyOnMaxZoom: true,
         showCoverageOnHover: false,
