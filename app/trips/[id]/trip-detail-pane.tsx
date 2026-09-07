@@ -81,6 +81,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                 carpoolOffers: prev.carpoolOffers.some((o) => o.id === result.carpool.id)
                   ? prev.carpoolOffers.map((o) => (o.id === result.carpool.id ? result.carpool : o))
                   : [...prev.carpoolOffers, result.carpool],
+                rsvps: prev.rsvps.map((r) =>
+                  r.userId === prev.currentUser.id && r.role === "SELF_DRIVE"
+                    ? { ...r, role: "DRIVER" as const }
+                    : r
+                ),
                 currentUser: {
                   ...prev.currentUser,
                   rsvp:
@@ -226,6 +231,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
             ? {
                 ...prev,
                 carpoolOffers: prev.carpoolOffers.filter((o) => o.id !== offerId),
+                rsvps: prev.rsvps.map((r) =>
+                  r.userId === prev.currentUser.id && r.role === "DRIVER"
+                    ? { ...r, role: "SELF_DRIVE" as const }
+                    : r
+                ),
                 currentUser: {
                   ...prev.currentUser,
                   rsvp:
