@@ -2,23 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { X, Minus, Plus, Camera, Binoculars, Loader2, CheckCircle, CloudOff } from "lucide-react";
-import { useSession } from "@/hooks/useAuth";
-import { useOfflineSightingQueue } from "@/hooks/useOfflineSightingQueue";
-
-type SpeciesOption = {
-  id: string;
-  commonName: string;
-  scientificName: string;
-  imageUrl: string | null;
-};
-
-type HotspotOption = {
-  id: string;
-  name: string;
-  locationName: string;
-  latitude: number;
-  longitude: number;
-};
+import type {
+  SpeciesOption,
+  HotspotOption,
+  SightingSubmitResult,
+} from "@/lib/sightings";
 
 type FieldCompanionScope =
   | { tripId: string; hotspotId: string; hotspotName: string; targetSpeciesIds: string[] }
@@ -48,7 +36,7 @@ export function FieldCompanion({
     longitude: number;
   }) => Promise<void>;
   submitting: boolean;
-  result?: { kind: "success" | "queued" | "error"; message: string; isNewToLifeList?: boolean } | null;
+  result?: SightingSubmitResult | null;
 }) {
   const [query, setQuery] = useState("");
   const [speciesId, setSpeciesId] = useState("");

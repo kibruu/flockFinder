@@ -21,7 +21,7 @@ export function SharedChecklistTab({
   targetSpecies: { id: string }[];
 }) {
   const { openCompanion } = useFieldCompanion();
-  const { entries, loading, addEntry } = useLiveChecklist(
+  const { entries, loading, upsertEntry } = useLiveChecklist(
     `/api/trips/${tripId}/checklist`,
     true
   );
@@ -38,7 +38,7 @@ export function SharedChecklistTab({
       });
       const data = res.ok ? await res.json() : null;
       if (res.ok && data?.entry) {
-        addEntry(data.entry as ChecklistEntry, true);
+        upsertEntry(data.entry as ChecklistEntry);
       } else {
         alert(data?.error || "Could not verify sighting");
       }

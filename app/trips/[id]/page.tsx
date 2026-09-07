@@ -4,6 +4,7 @@ import { TripDetailPane } from "./trip-detail-pane";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import type { TripDetail } from "@/types/trip";
+import { parseTripRsvpRole, parseTripStatus } from "@/types/domain";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -63,13 +64,13 @@ async function getTrip(id: string, currentUserId: string): Promise<TripDetail | 
       return sp ?? { id: sid, commonName: sid, scientificName: "", imageUrl: null, category: "", rarity: "" };
     }),
     maxParticipants: trip.maxParticipants,
-    status: trip.status,
+    status: parseTripStatus(trip.status, "UPCOMING"),
     host: trip.host,
     hotspot: trip.hotspot,
     rsvps: trip.rsvps.map((r) => ({
       id: r.id,
       userId: r.userId,
-      role: r.role,
+      role: parseTripRsvpRole(r.role) ?? "SELF_DRIVE",
       createdAt: r.createdAt.toISOString(),
       user: r.user,
     })),
@@ -94,7 +95,7 @@ async function getTrip(id: string, currentUserId: string): Promise<TripDetail | 
     })),
     currentUser: {
       id: currentUserId,
-      rsvp: userRsvp ? { role: userRsvp.role, createdAt: userRsvp.createdAt.toISOString() } : null,
+      rsvp: userRsvp ? { role: parseTripRsvpRole(userRsvp.role) ?? "SELF_DRIVE", createdAt: userRsvp.createdAt.toISOString() } : null,
       carpoolBooking: userCarpoolBooking
         ? { offerId: userCarpoolBooking.offerId, status: userCarpoolBooking.status, createdAt: userCarpoolBooking.createdAt.toISOString() }
         : null,

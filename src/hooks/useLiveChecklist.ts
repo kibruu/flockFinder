@@ -5,6 +5,9 @@ import type { ChecklistEntry } from "@/lib/sightings";
 
 const POLL_INTERVAL_MS = 4000;
 
+// Unlike message threads (append-only, so messages.ts uses an `after` cursor),
+// the checklist is a server-aggregated view. Each poll starts from the trip's
+// full checklist, so we cleanly replace the whole list rather than merge diffs.
 export function useLiveChecklist(url: string, enabled: boolean) {
   const [entries, setEntries] = useState<ChecklistEntry[]>([]);
   const [loading, setLoading] = useState(enabled);
@@ -56,15 +59,16 @@ export function useLiveChecklist(url: string, enabled: boolean) {
     };
   }, [url, enabled]);
 
-  const addEntry = useCallback((entry: ChecklistEntry, replace: boolean) => {
+  // Upsert a single refreshed entry (e.g. right after "Saw it too!") in place.
+  const upsertEntry = useCallback((entry: ChecklistEntry) => {
     setEntries((prev) => {
       const exists = prev.some((e) => e.speciesId === entry.speciesId);
       if (exists) {
         return prev.map((e) => (e.speciesId === entry.speciesId ? entry : e));
       }
-      return replace ? prev : [entry, ...prev];
+      return [entry, ...prev];
     });
   }, []);
 
-  return { entries, loading, addEntry };
+  return { entries, loading, upsertEntry };
 }

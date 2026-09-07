@@ -4,22 +4,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import { Binoculars, CloudOff } from "lucide-react";
 import { useSession } from "@/hooks/useAuth";
 import { useOfflineSightingQueue, type PendingSightingPayload } from "@/hooks/useOfflineSightingQueue";
+import type {
+  SpeciesOption,
+  HotspotOption,
+  SightingSubmitResult,
+} from "@/lib/sightings";
 import { FieldCompanion } from "./drawer";
-
-type SpeciesOption = {
-  id: string;
-  commonName: string;
-  scientificName: string;
-  imageUrl: string | null;
-};
-
-type HotspotOption = {
-  id: string;
-  name: string;
-  locationName: string;
-  latitude: number;
-  longitude: number;
-};
 
 export type CompanionScope = {
   tripId: string;
@@ -50,9 +40,7 @@ export function FieldCompanionLauncher({ children }: { children: React.ReactNode
   const [hotspots, setHotspots] = useState<HotspotOption[]>([]);
   const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [result, setResult] = useState<
-    { kind: "success" | "queued" | "error"; message: string; isNewToLifeList?: boolean } | null
-  >(null);
+  const [result, setResult] = useState<SightingSubmitResult | null>(null);
 
   const { pendingCount, pending, enqueue } = useOfflineSightingQueue(user?.id ?? null);
 
@@ -120,7 +108,7 @@ export function FieldCompanionLauncher({ children }: { children: React.ReactNode
           isNewToLifeList: attempt.isNewToLifeList,
           message: attempt.isNewToLifeList
             ? "Added to your Life List!"
-            : "Sighting logged!",
+            : "Already on your Life List — recorded.",
         });
         setSubmitting(false);
         return;

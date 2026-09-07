@@ -36,6 +36,27 @@ export type ChecklistEntry = {
   currentUserVerified: boolean;
 };
 
+export type SpeciesOption = {
+  id: string;
+  commonName: string;
+  scientificName: string;
+  imageUrl: string | null;
+};
+
+export type HotspotOption = {
+  id: string;
+  name: string;
+  locationName: string;
+  latitude: number;
+  longitude: number;
+};
+
+export type SightingSubmitResult = {
+  kind: "success" | "queued" | "error";
+  message: string;
+  isNewToLifeList?: boolean;
+};
+
 const SIGHTING_INCLUDE = {
   species: {
     select: {
@@ -117,23 +138,24 @@ export async function createSighting(
   input: CreateSightingInput,
   currentUserId?: string
 ): Promise<{ sighting: SightingRecord; isNewToLifeList: boolean }> {
-  const [isNew, created] = await Promise.all([
-    isNewToLifeList(input.userId, input.speciesId),
-    db.sighting.create({
-      data: {
-        userId: input.userId,
-        speciesId: input.speciesId,
-        hotspotId: input.hotspotId,
-        tripId: input.tripId ?? null,
-        count: input.count ?? 1,
-        notes: input.notes ?? null,
-        photoUrl: input.photoUrl ?? null,
-        latitude: input.latitude,
-        longitude: input.longitude,
-      },
-      include: SIGHTING_INCLUDE,
-    }),
-  ]);
+  // Check first, then create, so a concurrent first-sighting can't both report
+  // isNewToLifeList=true (a simultaneous read before either write lands).
+  const isNew = await isNewToLifeList(input.userId, input.speciesId);
+
+  const created = await db.sighting.create({
+    data: {
+      userId: input.userId,
+      speciesId: input.speciesId,
+      hotspotId: input.hotspotId,
+      tripId: input.tripId ?? null,
+      count: input.count ?? 1,
+      notes: input.notes ?? null,
+      photoUrl: input.photoUrl ?? null,
+      latitude: input.latitude,
+      longitude: input.longitude,
+    },
+    include: SIGHTING_INCLUDE,
+  });
 
   return { sighting: serializeSighting(created, currentUserId), isNewToLifeList: isNew };
 }

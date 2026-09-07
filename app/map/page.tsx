@@ -3,7 +3,7 @@ import { MapView } from "@/components/MapViewClient";
 import { db } from "@/lib/db";
 import { getSession, parseStringArray } from "@/lib/auth";
 import { loadRecentSightings } from "@/lib/sightings";
-import type { Hotspot, Sighting, Trip } from "@/components/MapView";
+import type { Hotspot, Trip } from "@/components/MapView";
 
 async function getHotspots(): Promise<Hotspot[]> {
   return db.hotspot.findMany({
@@ -20,10 +20,6 @@ async function getHotspots(): Promise<Hotspot[]> {
     },
     orderBy: { name: "asc" },
   });
-}
-
-async function getSightings(currentUserId?: string): Promise<Sighting[]> {
-  return loadRecentSightings(currentUserId);
 }
 
 async function getTrips(): Promise<Trip[]> {
@@ -104,7 +100,7 @@ export default async function MapPage() {
   const currentUserId = await getCurrentUserId();
   const [hotspots, sightings, trips] = await Promise.all([
     getHotspots(),
-    getSightings(currentUserId),
+    loadRecentSightings(currentUserId),
     getTrips(),
   ]);
 
