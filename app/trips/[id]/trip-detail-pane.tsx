@@ -15,8 +15,10 @@ import {
   AlertCircle,
   Loader2,
   X,
+  MessageSquare,
 } from "lucide-react";
 import type { TripDetail } from "@/types/trip";
+import { MessageThread } from "@/components/MessageThread";
 
 interface TripDetailPaneProps {
   initialTrip: TripDetail;
@@ -26,7 +28,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
   const params = useParams();
   const router = useRouter();
   const [trip, setTrip] = useState<TripDetail | null>(initialTrip);
-  const [activeTab, setActiveTab] = useState<"details" | "carpools" | "attendees">("details");
+  const [activeTab, setActiveTab] = useState<"details" | "carpools" | "attendees" | "chat">("details");
   const [showCarpoolModal, setShowCarpoolModal] = useState(false);
 
   const handleRSVP = async (role: "SELF_DRIVE" | "PASSENGER") => {
@@ -300,6 +302,14 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
   const editingOffer = hasCarpoolOffer
     ? (trip.carpoolOffers.find((o) => o.id === trip.currentUser.carpoolOffer?.id) ?? null)
     : null;
+  const tabs = [
+    { id: "details", label: "Details", icon: Flag },
+    { id: "carpools", label: "Carpools", icon: Car },
+    { id: "attendees", label: "Attendees", icon: Users },
+    ...(trip.currentUser.rsvp
+      ? ([{ id: "chat", label: "Trip Chat", icon: MessageSquare }] as const)
+      : []),
+  ] as const;
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-8">
@@ -465,11 +475,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
 
         <main className="lg:col-span-2 space-y-6">
           <div className="flex gap-2 border-b border-gray-200 dark:border-gray-700 pb-2">
-            {([
-              { id: "details", label: "Details", icon: Flag },
-              { id: "carpools", label: "Carpools", icon: Car },
-              { id: "attendees", label: "Attendees", icon: Users },
-            ] as const).map((tab) => (
+            {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
@@ -731,9 +737,32 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                     >
                       {rsvp.role}
                     </span>
+                    {rsvp.userId !== trip.currentUser.id && (
+                      <Link
+                        href={`/messages/${rsvp.userId}`}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/30 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors"
+                      >
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        Message
+                      </Link>
+                    )}
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {activeTab === "chat" && (
+            <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-teal-600" />
+                Trip Chat
+              </h3>
+              <MessageThread
+                url={`/api/trips/${params.id}/chat`}
+                currentUserId={trip.currentUser.id}
+                enabled={activeTab === "chat"}
+              />
             </div>
           )}
         </main>

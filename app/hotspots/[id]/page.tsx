@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Bird, Calendar, Clock, MapPin, Navigation, Users } from "lucide-react";
+import { ArrowLeft, Bird, Calendar, Clock, MapPin, MessageSquare, Navigation, Users } from "lucide-react";
 import { db } from "@/lib/db";
+import { getSession } from "@/lib/auth";
+import { LiveBoard } from "./live-board";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -145,6 +147,7 @@ export default async function HotspotDetailPage({ params }: Props) {
   if (!hotspot) {
     notFound();
   }
+  const session = await getSession();
 
   const amenities = hotspot.amenities ? hotspot.amenities.split(",").map((a) => a.trim()).filter(Boolean) : [];
 
@@ -279,6 +282,16 @@ export default async function HotspotDetailPage({ params }: Props) {
               ))}
             </ul>
           )}
+        </section>
+
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 text-xl font-semibold">
+            <MessageSquare className="h-5 w-5 text-teal-600 dark:text-sage" />
+            Live Board
+          </h2>
+          <div className="mt-4 rounded-xl border border-sage/20 dark:border-sage/600 p-4 bg-sandstone/60 dark:bg-forest shadow-sm">
+            <LiveBoard hotspotId={hotspot.id} currentUserId={session?.id ?? null} />
+          </div>
         </section>
 
         <section className="mt-8 pb-12">
