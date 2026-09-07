@@ -775,9 +775,13 @@ function CarpoolModal({
     setSubmitting(true);
     try {
       const form = new FormData(e.currentTarget);
+      const departureTimeRaw = form.get("departureTime") as string;
       await onSubmit({
         originArea: form.get("originArea") as string,
-        departureTime: toIsoInstant(form.get("departureTime") as string),
+        departureTime:
+          initial && departureTimeRaw === toDatetimeLocalValue(initial.departureTime)
+            ? initial.departureTime
+            : toIsoInstant(departureTimeRaw),
         totalSeats: parseInt(form.get("totalSeats") as string),
         notes: (form.get("notes") as string) || "",
       });
