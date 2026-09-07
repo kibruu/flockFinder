@@ -3,6 +3,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { AuthProvider } from "@/hooks/useAuth";
+import { FieldCompanionLauncher } from "@/components/FieldCompanion/launcher";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -37,8 +38,10 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-background text-text-primary font-sans">
         <AuthProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
+          <FieldCompanionLauncher>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+          </FieldCompanionLauncher>
         </AuthProvider>
       </body>
     </html>
