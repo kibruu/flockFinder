@@ -233,6 +233,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     const map = L.map(mapRef.current, {
       center: [39.8283, -98.5795],
       zoom: 4,
+      maxZoom: 19,
       zoomControl: false,
       attributionControl: false,
     });
@@ -246,7 +247,8 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     updateTileLayer(darkMode);
 
     void ensureMarkerCluster().then(() => {
-      if (!mapInstanceRef.current) return;
+      const currentMap = mapInstanceRef.current;
+      if (!currentMap || layersRef.current.sightings) return;
 
       layersRef.current.sightings = createClusterLayer({
         iconCreateFunction: (cluster) => createClusterIcon(cluster.getChildCount(), LAYER_COLORS.sightings),
@@ -256,12 +258,12 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       });
 
       Object.values(layersRef.current).forEach((layer) => {
-        if (layer) layer.addTo(map);
+        if (layer) layer.addTo(currentMap);
       });
 
-      map.on("zoomend", () => {
-        if (map.getZoom() < 5) {
-          map.closePopup();
+      currentMap.on("zoomend", () => {
+        if (currentMap.getZoom() < 5) {
+          currentMap.closePopup();
         }
       });
 
