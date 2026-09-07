@@ -92,7 +92,7 @@ A good test asserts external behavior via the API seam: HTTP status, response sh
 - Test matrix (behavioral, via HTTP):
   - Trip chat: non-member cannot read (403) or post (403); each RSVP role (HOST/DRIVER/PASSENGER/SELF_DRIVE) can post and read; blank/whitespace content rejected (400); >2000 char content rejected (400); posting on a `CANCELLED` trip rejected; `after` cursor returns only newer messages; newest-50 default.
   - Hotspot board: guest read succeeds; guest post rejected (401); signed-in post succeeds; public read shape includes sender.
-  - 1-on-1: read thread as a third party rejected (403); read as each participant succeeds; posting to self rejected (400); posting to nonexistent user rejected (404); conversation list contains only own threads; `after` cursor semantics; blank content rejected (400).
+  - 1-on-1: read as each participant succeeds; thread read by anyone else returns the empty list (messages between the two participants are never exposed); posting to self rejected (400); posting to nonexistent user rejected (404); conversation list contains only own threads; `after` cursor semantics; blank content rejected (400).
 - Still no automated test runner exists in the repo — noted again as a prerequisite, unchanged from ticket #6.
 
 ## Out of Scope

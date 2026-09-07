@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MessageRecord } from "@/lib/messages";
 
 const POLL_INTERVAL_MS = 4000;
+const POLL_BATCH_LIMIT = 100;
 
 export function useLiveMessages(url: string, enabled: boolean) {
   const [messages, setMessages] = useState<MessageRecord[]>([]);
@@ -18,20 +19,28 @@ export function useLiveMessages(url: string, enabled: boolean) {
     if (!enabled) return;
 
     let active = true;
+    let polling = false;
+    let controller: AbortController | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const poll = async (useCursor: boolean) => {
-      if (!active) return;
-      if (document.hidden) return;
+      if (!active || polling || document.hidden) return;
+      polling = true;
 
-      try {
-        const query = useCursor && lastIdRef.current
+      const query =
+        useCursor && lastIdRef.current
           ? `?after=${encodeURIComponent(lastIdRef.current)}`
           : "";
-        const res = await fetch(`${url}${query}`);
+      controller = new AbortController();
+      try {
+        const res = await fetch(`${url}${query}`, { signal: controller.signal });
+        if (!active) return;
         if (res.ok) {
           const data = await res.json();
-          const fresh: MessageRecord[] = Array.isArray(data.messages) ? data.messages : [];
+          if (!active) return;
+          const fresh: MessageRecord[] = Array.isArray(data.messages)
+            ? data.messages
+            : [];
           if (fresh.length > 0) {
             setMessages((prev) => {
               const merged = new Map(prev.map((m) => [m.id, m] as const));
@@ -45,10 +54,11 @@ export function useLiveMessages(url: string, enabled: boolean) {
         }
       } catch {
         // transient poll errors are ignored; the next tick retries
-      }
-
-      if (active && !document.hidden) {
-        timer = setTimeout(() => poll(true), POLL_INTERVAL_MS);
+      } finally {
+        polling = false;
+        if (active && !document.hidden) {
+          timer = setTimeout(() => poll(true), POLL_INTERVAL_MS);
+        }
       }
     };
 
@@ -62,14 +72,16 @@ export function useLiveMessages(url: string, enabled: boolean) {
 
     return () => {
       active = false;
+      controller?.abort();
       if (timer) clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [url, enabled, reset]);
 
   const append = useCallback((message: MessageRecord) => {
-    setMessages((prev) => (prev.some((m) => m.id === message.id) ? prev : [...prev, message]));
-    lastIdRef.current = message.id;
+    setMessages((prev) =>
+      prev.some((m) => m.id === message.id) ? prev : [...prev, message]
+    );
   }, []);
 
   return { messages, append };

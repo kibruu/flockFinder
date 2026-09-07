@@ -10,7 +10,10 @@ export async function GET() {
     }
 
     const conversations = await getConversations(session.id);
-    return NextResponse.json({ conversations });
+    return NextResponse.json(
+      { conversations },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch {
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }

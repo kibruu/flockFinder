@@ -80,18 +80,10 @@ export async function GET(
     const messages = after
       ? await loadAfter(session.id, userId, after)
       : await loadLatest(session.id, userId);
-    if (messages.length === 0) {
-      const threadCount = await db.chatMessage.count({
-        where: { OR: threadBetween(session.id, userId) },
-      });
-      if (threadCount === 0) {
-        return NextResponse.json(
-          { error: "You have no conversation with this user" },
-          { status: 403 }
-        );
-      }
-    }
-    return NextResponse.json({ messages });
+    return NextResponse.json(
+      { messages },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch {
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }

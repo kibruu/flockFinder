@@ -79,7 +79,10 @@ export async function GET(
 
     const after = request.nextUrl.searchParams.get("after");
     const messages = after ? await loadAfter(id, after) : await loadLatest(id);
-    return NextResponse.json({ messages });
+    return NextResponse.json(
+      { messages },
+      { headers: { "Cache-Control": "no-store" } }
+    );
   } catch {
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
