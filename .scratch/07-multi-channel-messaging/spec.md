@@ -1,5 +1,7 @@
 # Spec: Multi-Channel Messaging (Ticket #7)
 
+*Updated 2026-09-08 (PR #23): DM message editing/soft-delete, read receipts + unread badges, and a composer emoji picker shipped after ticket #7. The affected sections below are amended in place.*
+
 ## Problem Statement
 
 Expedition coordination relies on out-of-band WhatsApp/Facebook threads: attendees confirm meeting details in one place, drivers coordinate pickups in another, and field reports never reach the people on-site. Members have no way to message each other directly for ride or species inquiries. The community's coordination chaos (per the product vision) persists because there is no in-app communication channel.
@@ -51,7 +53,7 @@ Every message input shows the sender's avatar, name, and a relative timestamp. M
 
 Realtime mechanism: **client-side polling** (no SSE/WebSocket/push infra), per ADR 0003's MVP boundary. Poll interval defaults to 4000ms, paused while the browser tab is hidden. Polling uses an `after=<messageId>` cursor so each poll returns only messages newer than the last one seen.
 
-Data model: the existing `ChatMessage` model is the single record for all three channels. The three destination columns are mutually exclusive — `tripId`, `hotspotId`, or `recipientId` — enforced in the route handlers (Prisma cannot express partial uniqueness). Add the following indexes: `(@@index([tripId, createdAt]))`, `(@@index([hotspotId, createdAt]))`, `(@@index([senderId, createdAt]))`, `(@@index([recipientId, createdAt]))`. Message `content` is trimmed, must be non-empty, and is capped at 2000 characters. Messages are immutable and never hard-deleted (no edit/delete endpoints in scope); trip chat stays readable to members regardless of trip status, and posting is disallowed once the trip's status is `CANCELLED`. The 1-on-1 channel has no separate Conversation table — the conversation list is derived from messages where the current user is sender or recipient.
+Data model: the existing `ChatMessage` model is the single record for all three channels. The three destination columns are mutually exclusive — `tripId`, `hotspotId`, or `recipientId` — enforced in the route handlers (Prisma cannot express partial uniqueness). Add the following indexes: `(@@index([tripId, createdAt]))`, `(@@index([hotspotId, createdAt]))`, `(@@index([senderId, createdAt]))`, `(@@index([recipientId, createdAt]))`. Message `content` is trimmed, must be non-empty, and is capped at 2000 characters. Messages are mutable — a DM sender may edit their own message (`PATCH` sets `content` + `editedAt`) or soft-delete it (`DELETE` sets `content` to `""` + `deletedAt`); deleted messages are never hard-deleted and persist as tombstones visible to both sides. Trip chat stays readable to members regardless of trip status, and posting is disallowed once the trip's status is `CANCELLED`. The 1-on-1 conversation list is still derived from messages where the current user is sender or recipient. Read tracking adds two auxiliary tables: `Conversation` (per-direction user/peer record with `lastReadAt`, `@@unique([userId, peerId])`) and `MessageRead` (`@@unique([messageId, userId])`). `Conversation` rows are upserted when a DM is first sent; `lastReadAt` and `MessageRead` rows are written by the read-receipt endpoint.
 
 Seam (the single place behavior is tested): the message **API route handlers**, mirroring the ticket #6 carpool capstone. All invariants — channel authorization, content validation, cursor semantics, sender!=recipient, participant-only reads — live behind these handlers; the client is thin view state fed by polling.
 
@@ -68,11 +70,14 @@ Authorized using the existing session helper. Guard order consistent with ADR 00
 - `GET /api/hotspots/[id]/board?after=<messageId>` — public read; no session required. Same cursor semantics: newest 50 ascending, or newer-than-cursor. Messages include sender `{ id, name, avatarUrl }`.
 
 **1-on-1 Direct Messages**
-- `GET /api/messages` — requires session. Returns the current user's conversations, each with the other participant `{ id, name, avatarUrl }`, last message `{ content, createdAt }`, ordered by most recent.
-- `GET /api/messages/[userId]?after=<messageId>` — requires session; the current user must be the sender or recipient of every returned message. Same cursor semantics. Messages include sender `{ id, name, avatarUrl }`.
+- `GET /api/messages` — requires session. Returns the current user's conversations, each with the other participant `{ id, name, avatarUrl }`, last message `{ content, createdAt }`, and `unreadCount` (the peer's non-soft-deleted messages newer than `Conversation.lastReadAt`; all peer messages if there is no read anchor), ordered by most recent.
+- `GET /api/messages/[userId]?after=<messageId>` — requires session; the current user must be the sender or recipient of every returned message. Same cursor semantics. Soft-deleted tombstones (empty `content`, non-null `deletedAt`) are returned normally — reads never filter them out, so a deleted message stays visible to both participants. Messages include sender `{ id, name, avatarUrl }`.
 - `POST /api/messages/[userId]` — body `{ content }`. Requires session; target user must exist; `[userId]` must differ from the session user. Returns the created message with sender.
+- `PATCH /api/messages/[userId]` — body `{ messageId, content }`. Requires session; only the message sender may edit (403 otherwise); the message must belong to this conversation (400) and must not already be soft-deleted (400 `Message is deleted`). Returns the updated message with `editedAt`.
+- `DELETE /api/messages/[userId]` — body `{ messageId }`. Requires session; sender-only (403); belongs-to-conversation check (400). Soft-deletes: sets `content` to `""` and stamps `deletedAt`. Returns `{ success: true }` — no hard delete.
+- `POST /api/messages/[userId]/read` — requires session. Marks the peer's non-deleted messages as read (inserts `MessageRead` rows) and bumps `Conversation.lastReadAt`. Returns `{ success: true, markedCount }`.
 
-Message shape (same across channels): `{ id, content, createdAt, sender: { id, name, avatarUrl } }`.
+Message shape (same across channels): `{ id, content, createdAt, editedAt, deletedAt, sender: { id, name, avatarUrl } }`. `editedAt`/`deletedAt` are `null` unless set; a soft-deleted message serializes with `content` `""` and a non-null `deletedAt`.
 
 ### Client
 
@@ -80,7 +85,8 @@ Message shape (same across channels): `{ id, content, createdAt, sender: { id, n
 - A shared **message thread** presentational block (list + composer) rendered by all three channels, with a relative-time helper (`just now`, `3m`, `2h`, `yesterday`, then a short date).
 - Trip Chat: a new tab in the existing Expedition detail pane, visible only to members (non-members either see no tab or a read-only prompt; spec for the agent: render the tab only when the user holds a trip RSVP).
 - Hotspot Live Board: a client board section on the exiting Hotspot page; board is publicly readable, posting renders a signed-in-only composer.
-- 1-on-1: a `/messages` conversation-list page and `/messages/[userId]` thread page (server component shells hosting the shared client thread, per ADR 0006), plus a "Message" link on Expedition attendee roster rows routing to the member's thread.
+- 1-on-1: a `/messages` conversation-list page and `/messages/[userId]` thread page (server component shells hosting the shared client thread, per ADR 0006), plus a "Message" link on Expedition attendee roster rows routing to the member's thread. DM-only affordances (shipped in PR #23): unread badges per conversation in the list that clear when the thread is opened (a read-receipt `POST` fires on opening a DM thread); edit/delete controls and an `(edited)` marker on the user's own messages; deleted messages render as `Message deleted`.
+- Composer emoji picker (inserts into the draft; distinct from per-message emoji reactions, which remain out of scope).
 - Follow the app's avatar rendering (dicebear `avatarUrl`) and the established teal/gray visual language. Message content renders as plain text only — no `dangerouslySetInnerHTML`, no markdown rendering. Composer clears only after the server confirms the message.
 
 ## Testing Decisions
@@ -92,14 +98,13 @@ A good test asserts external behavior via the API seam: HTTP status, response sh
 - Test matrix (behavioral, via HTTP):
   - Trip chat: non-member cannot read (403) or post (403); each RSVP role (HOST/DRIVER/PASSENGER/SELF_DRIVE) can post and read; blank/whitespace content rejected (400); >2000 char content rejected (400); posting on a `CANCELLED` trip rejected; `after` cursor returns only newer messages; newest-50 default.
   - Hotspot board: guest read succeeds; guest post rejected (401); signed-in post succeeds; public read shape includes sender.
-  - 1-on-1: read as each participant succeeds; thread read by anyone else returns the empty list (messages between the two participants are never exposed); posting to self rejected (400); posting to nonexistent user rejected (404); conversation list contains only own threads; `after` cursor semantics; blank content rejected (400).
+  - 1-on-1: read as each participant succeeds; thread read by anyone else returns the empty list (messages between the two participants are never exposed); posting to self rejected (400); posting to nonexistent user rejected (404); conversation list contains only own threads; `after` cursor semantics; blank content rejected (400). Edit/delete (PR #23): editing another user's message rejected (403); deleting another user's message rejected (403); deleting one's own soft-deletes (tombstone returned to both participants, `deletedAt` set); editing a deleted message rejected (400); editing one's own sets `editedAt`. Read receipts: `POST .../read` marks the peer's non-deleted messages and bumps `unreadCount` to 0; a guest read-receipt call is rejected (401).
 - Still no automated test runner exists in the repo — noted again as a prerequisite, unchanged from ticket #6.
 
 ## Out of Scope
 
 - Push notifications (APNS/FCM/web push), per ADR 0003.
-- Unread-message counts/badges and read receipts.
-- Typing indicators, message editing/deletion, media/file/photo attachments, emoji reactions, message search, group DMs.
+- Typing indicators, per-message emoji reactions (a composer emoji picker shipped in PR #23), media/file/photo attachments, message search, group DMs.
 - Offline queueing for messages (ADR 0004 covers sightings only).
 - Pagination beyond last-50 + incremental cursor.
 - Rate limiting, spam/moderation tooling, and message reporting (flagged for a follow-up).
