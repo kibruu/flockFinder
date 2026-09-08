@@ -3,7 +3,10 @@
 @import "leaflet.markercluster/dist/MarkerCluster.css";
 @import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
+  color-scheme: light;
   --color-forest-deep: #1B3B2B;
   --color-forest-mid: #3D6B52;
   --color-forest: #2D5A3D;
@@ -30,14 +33,13 @@
   --font-display: var(--font-plus-jakarta);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-background: var(--color-sandstone-dark);
-    --color-surface: #1e2d26;
-    --color-text-primary: #f0f0f0;
-    --color-text-secondary: #b0b0b0;
-    --color-border: #33443a;
-  }
+:root.dark {
+  color-scheme: dark;
+  --color-background: var(--color-sandstone-dark);
+  --color-surface: #1e2d26;
+  --color-text-primary: #f0f0f0;
+  --color-text-secondary: #b0b0b0;
+  --color-border: #33443a;
 }
 
 @theme inline {
