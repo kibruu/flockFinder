@@ -6,6 +6,7 @@ const PAGE_SIZE = 500;
 export type ConversationSummary = {
   user: { id: string; name: string; avatarUrl: string | null } | null;
   lastMessage: { content: string; createdAt: string };
+  unreadCount: number;
 };
 
 export async function getConversations(userId: string): Promise<ConversationSummary[]> {
@@ -60,16 +61,52 @@ export async function getConversations(userId: string): Promise<ConversationSumm
     cursor = { id: page[page.length - 1].id, createdAt: page[page.length - 1].createdAt };
   }
 
-  const peers = await db.user.findMany({
-    where: { id: { in: [...lastByPeer.keys()] } },
-    select: { id: true, name: true, avatarUrl: true },
-  });
+  const peerIds = [...lastByPeer.keys()];
+  const [peers, conversations] = await Promise.all([
+    db.user.findMany({
+      where: { id: { in: peerIds } },
+      select: { id: true, name: true, avatarUrl: true },
+    }),
+    db.conversation.findMany({
+      where: { userId, peerId: { in: peerIds } },
+      select: { peerId: true, lastReadAt: true },
+    }),
+  ]);
   const peerById = new Map(peers.map((peer) => [peer.id, peer]));
+  const lastReadByPeer = new Map(conversations.map((c) => [c.peerId, c.lastReadAt]));
 
-  return [...lastByPeer.entries()]
-    .sort((a, b) => b[1].createdAt.getTime() - a[1].createdAt.getTime())
-    .map(([peerId, last]) => ({
-      user: peerById.get(peerId) ?? null,
-      lastMessage: { content: last.content, createdAt: last.createdAt.toISOString() },
-    }));
+  const results = await Promise.all(
+    [...lastByPeer.entries()].map(async ([peerId, last]) => {
+      const lastReadAt = lastReadByPeer.get(peerId);
+      let unreadCount = 0;
+      if (lastReadAt) {
+        unreadCount = await db.chatMessage.count({
+          where: {
+            senderId: peerId,
+            recipientId: userId,
+            deletedAt: null,
+            createdAt: { gt: lastReadAt },
+          },
+        });
+      } else {
+        unreadCount = await db.chatMessage.count({
+          where: {
+            senderId: peerId,
+            recipientId: userId,
+            deletedAt: null,
+          },
+        });
+      }
+      return {
+        user: peerById.get(peerId) ?? null,
+        lastMessage: { content: last.content, createdAt: last.createdAt.toISOString() },
+        unreadCount,
+      };
+    })
+  );
+
+  return results.sort(
+    (a, b) =>
+      new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime()
+  );
 }

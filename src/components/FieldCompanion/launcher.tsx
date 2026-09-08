@@ -38,7 +38,6 @@ export function FieldCompanionLauncher({ children }: { children: React.ReactNode
   const [scope, setScope] = useState<CompanionScope | null>(null);
   const [species, setSpecies] = useState<SpeciesOption[]>([]);
   const [hotspots, setHotspots] = useState<HotspotOption[]>([]);
-  const [loadingCatalog, setLoadingCatalog] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<SightingSubmitResult | null>(null);
 
@@ -48,7 +47,6 @@ export function FieldCompanionLauncher({ children }: { children: React.ReactNode
     if (!open) return;
     if (species.length > 0 && hotspots.length > 0) return;
     let active = true;
-    setLoadingCatalog(true);
     (async () => {
       try {
         const [speciesRes, hotspotsRes] = await Promise.all([
@@ -64,8 +62,6 @@ export function FieldCompanionLauncher({ children }: { children: React.ReactNode
         }
       } catch {
         // catalog load was interrupted; next open retries
-      } finally {
-        if (active) setLoadingCatalog(false);
       }
     })();
     return () => {

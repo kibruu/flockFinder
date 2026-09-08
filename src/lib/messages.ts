@@ -12,16 +12,20 @@ export type MessageRecord = {
   id: string;
   content: string;
   createdAt: string;
+  editedAt: string | null;
+  deletedAt: string | null;
   sender: MessageSender;
 };
 
 export function serializeMessage(
-  message: Pick<ChatMessage, "id" | "content" | "createdAt"> & { sender: MessageSender }
+  message: Pick<ChatMessage, "id" | "content" | "createdAt" | "editedAt" | "deletedAt"> & { sender: MessageSender }
 ): MessageRecord {
   return {
     id: message.id,
     content: message.content,
     createdAt: message.createdAt.toISOString(),
+    editedAt: message.editedAt?.toISOString() ?? null,
+    deletedAt: message.deletedAt?.toISOString() ?? null,
     sender: message.sender,
   };
 }

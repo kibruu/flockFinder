@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, Car, Award, MapPin, Feather, Settings, LogOut, ChevronRight, Plus } from "lucide-react";
@@ -28,18 +28,21 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
     vehicleSeats: String(user.vehicleSeats || ""),
   });
 
-  useEffect(() => {
-    if (editing) {
-      setEditData({
-        name: user.name,
-        bio: user.bio || "",
-        city: user.city || "",
-        vehicleModel: user.vehicleModel || "",
-        vehicleSeats: String(user.vehicleSeats || ""),
-      });
-      setError(null);
-    }
-  }, [editing, user]);
+  const [prevEditing, setPrevEditing] = useState(editing);
+  if (editing && !prevEditing) {
+    setPrevEditing(true);
+    setEditData({
+      name: user.name,
+      bio: user.bio || "",
+      city: user.city || "",
+      vehicleModel: user.vehicleModel || "",
+      vehicleSeats: String(user.vehicleSeats || ""),
+    });
+    setError(null);
+  }
+  if (!editing && prevEditing) {
+    setPrevEditing(false);
+  }
 
   const handleSave = async () => {
     setSaving(true);

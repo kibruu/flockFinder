@@ -27,6 +27,8 @@ async function loadLatest(me: string, peerId: string): Promise<MessageRecord[]> 
       id: true,
       content: true,
       createdAt: true,
+      editedAt: true,
+      deletedAt: true,
       sender: { select: SENDER_SELECT },
     },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -52,6 +54,8 @@ async function loadAfter(me: string, peerId: string, after: string): Promise<Mes
       id: true,
       content: true,
       createdAt: true,
+      editedAt: true,
+      deletedAt: true,
       sender: { select: SENDER_SELECT },
     },
     orderBy: [{ createdAt: "asc" }, { id: "asc" }],
@@ -121,11 +125,125 @@ export async function POST(
         id: true,
         content: true,
         createdAt: true,
+        editedAt: true,
+        deletedAt: true,
         sender: { select: SENDER_SELECT },
       },
     });
 
+    // Ensure conversation exists for both users
+    await db.conversation.upsert({
+      where: { userId_peerId: { userId: session.id, peerId: userId } },
+      create: { userId: session.id, peerId: userId },
+      update: { updatedAt: new Date() },
+    });
+    await db.conversation.upsert({
+      where: { userId_peerId: { userId, peerId: session.id } },
+      create: { userId, peerId: session.id },
+      update: { updatedAt: new Date() },
+    });
+
     return NextResponse.json({ message: serializeMessage(created) }, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { userId } = await params;
+    const body = await request.json().catch(() => null);
+    const { messageId, content } = body ?? {};
+    if (!messageId || !content) {
+      return NextResponse.json({ error: "messageId and content required" }, { status: 400 });
+    }
+
+    const normalized = normalizeMessageContent(content);
+    if (!normalized) {
+      return NextResponse.json({ error: "Message must be 1-2000 characters" }, { status: 400 });
+    }
+
+    const message = await db.chatMessage.findUnique({
+      where: { id: messageId },
+      select: { id: true, senderId: true, recipientId: true, deletedAt: true },
+    });
+    if (!message) {
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    }
+    if (message.deletedAt) {
+      return NextResponse.json({ error: "Message is deleted" }, { status: 400 });
+    }
+    if (message.senderId !== session.id) {
+      return NextResponse.json({ error: "Can only edit your own messages" }, { status: 403 });
+    }
+    if (message.recipientId !== userId) {
+      return NextResponse.json({ error: "Message not in this conversation" }, { status: 400 });
+    }
+
+    const updated = await db.chatMessage.update({
+      where: { id: messageId },
+      data: { content: normalized, editedAt: new Date() },
+      select: {
+        id: true,
+        content: true,
+        createdAt: true,
+        editedAt: true,
+        deletedAt: true,
+        sender: { select: SENDER_SELECT },
+      },
+    });
+
+    return NextResponse.json({ message: serializeMessage(updated) });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { userId } = await params;
+    const body = await request.json().catch(() => null);
+    const { messageId } = body ?? {};
+    if (!messageId) {
+      return NextResponse.json({ error: "messageId required" }, { status: 400 });
+    }
+
+    const message = await db.chatMessage.findUnique({
+      where: { id: messageId },
+      select: { id: true, senderId: true, recipientId: true, deletedAt: true },
+    });
+    if (!message) {
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    }
+    if (message.senderId !== session.id) {
+      return NextResponse.json({ error: "Can only delete your own messages" }, { status: 403 });
+    }
+    if (message.recipientId !== userId) {
+      return NextResponse.json({ error: "Message not in this conversation" }, { status: 400 });
+    }
+
+    await db.chatMessage.update({
+      where: { id: messageId },
+      data: { deletedAt: new Date(), content: "" },
+    });
+
+    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }

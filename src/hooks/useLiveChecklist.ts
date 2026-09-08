@@ -23,8 +23,9 @@ export function useLiveChecklist(url: string, enabled: boolean) {
     let controller: AbortController | null = null;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
-    const poll = async () => {
+    const poll = async (showLoader = false) => {
       if (!active || polling || document.hidden) return;
+      if (showLoader) setLoading(true);
       polling = true;
       controller = new AbortController();
       const startedRevision = revisionRef.current;
@@ -52,8 +53,7 @@ export function useLiveChecklist(url: string, enabled: boolean) {
       if (!document.hidden) poll();
     };
 
-    setLoading(true);
-    poll();
+    poll(true);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
     return () => {
