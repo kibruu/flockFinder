@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
@@ -35,7 +36,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`}>
+    <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable} h-full antialiased`} suppressHydrationWarning>
+      <Script id="theme-init" strategy="beforeInteractive">
+        {`(function(){try{var s=localStorage.getItem("darkMode");var d=s!==null?s==="true":window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.classList.toggle("dark",d);}catch(e){}})();`}
+      </Script>
       <body className="min-h-full flex flex-col bg-background text-text-primary font-sans">
         <AuthProvider>
           <FieldCompanionLauncher>

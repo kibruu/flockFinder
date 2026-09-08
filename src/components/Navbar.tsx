@@ -84,6 +84,7 @@ export function Navbar() {
               onClick={toggleDarkMode}
               className="p-2 rounded-lg text-forest/70 hover:bg-sage/20 dark:text-sandstone/70 dark:hover:bg-sage/800 transition-colors"
               aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
+              suppressHydrationWarning
             >
               {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
             </button>
