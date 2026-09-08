@@ -189,6 +189,13 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
   const [geolocationError, setGeolocationError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
 
+  const [mountEpoch] = useState(() => Date.now());
+  const dateCutoff = useMemo(() => {
+    if (!debouncedFilters.dateRange) return null;
+    const days = parseInt(debouncedFilters.dateRange, 10);
+    return new Date(mountEpoch - days * 24 * 60 * 60 * 1000);
+  }, [debouncedFilters.dateRange, mountEpoch]);
+
   const filteredSightings = useMemo(() => {
     let result = sightings;
     if (debouncedFilters.species) {
@@ -202,12 +209,13 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       });
     }
     if (debouncedFilters.dateRange) {
-      const days = parseInt(debouncedFilters.dateRange, 10);
-      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-      result = result.filter((s) => new Date(s.spottedAt) >= cutoff);
+      const cutoff = dateCutoff;
+      if (cutoff) {
+        result = result.filter((s) => new Date(s.spottedAt) >= cutoff);
+      }
     }
     return result;
-  }, [sightings, hotspots, debouncedFilters]);
+  }, [sightings, hotspots, debouncedFilters, dateCutoff]);
 
   const updateTileLayer = useCallback((darkMode: boolean) => {
     darkModeRef.current = darkMode;

@@ -23,6 +23,7 @@ const QUEUE_PREFIX = "flockfinder_pending_sightings_";
 const FLUSH_RETRY_MS = 5000;
 
 function readQueue(userId: string): PendingSighting[] {
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(QUEUE_PREFIX + userId);
     if (!raw) return [];
@@ -42,18 +43,19 @@ function writeQueue(userId: string, queue: PendingSighting[]) {
 }
 
 export function useOfflineSightingQueue(userId: string | null) {
-  const [pending, setPending] = useState<PendingSighting[]>([]);
+  const [pending, setPending] = useState<PendingSighting[]>(() =>
+    userId ? readQueue(userId) : []
+  );
+  const [prevUserId, setPrevUserId] = useState(userId);
+  if (prevUserId !== userId) {
+    setPrevUserId(userId);
+    setPending(userId ? readQueue(userId) : []);
+  }
   const [online, setOnline] = useState(
     typeof navigator === "undefined" ? true : navigator.onLine
   );
 
   useEffect(() => {
-    if (!userId) {
-      setPending([]);
-      return;
-    }
-    setPending(readQueue(userId));
-
     const onOnline = () => setOnline(true);
     const onOffline = () => setOnline(false);
     window.addEventListener("online", onOnline);

@@ -17,19 +17,17 @@ export function Navbar() {
   const { user, loading } = useSession();
   const { switchDemo, demos, switching } = useDemoSwitch();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window === "undefined") return false;
+    const saved = localStorage.getItem("darkMode");
+    if (saved !== null) return saved === "true";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  });
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   useEffect(() => {
-    const saved = localStorage.getItem("darkMode");
-    if (saved) {
-      setDarkMode(saved === "true");
-      document.documentElement.classList.toggle("dark", saved === "true");
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      setDarkMode(true);
-      document.documentElement.classList.add("dark");
-    }
-  }, []);
+    document.documentElement.classList.toggle("dark", darkMode);
+  }, [darkMode]);
 
   const toggleDarkMode = () => {
     const newMode = !darkMode;

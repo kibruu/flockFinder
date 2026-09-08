@@ -47,13 +47,14 @@ export function FieldCompanion({
   const [notes, setNotes] = useState("");
   const [photoUrl, setPhotoUrl] = useState("");
 
-  useEffect(() => {
-    if (scope) return;
-    setHotspotId((current) => {
-      if (current) return current;
-      return hotspots.length > 0 ? hotspots[0].id : "";
-    });
-  }, [hotspots, scope]);
+  const [prevScope, setPrevScope] = useState(scope);
+  if (prevScope !== scope) {
+    setPrevScope(scope);
+    if (scope) setHotspotId(scope.hotspotId);
+  }
+  if (!scope && !hotspotId && hotspots.length > 0) {
+    setHotspotId(hotspots[0].id);
+  }
 
   // After a successful log, clear the draft so "Log Another" starts fresh.
   const prevResultKindRef = useRef<string | null>(null);

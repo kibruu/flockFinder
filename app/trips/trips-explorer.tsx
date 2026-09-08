@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useTransition } from "react";
+import { useState, useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { TripCard } from "@/components/TripCard";
@@ -62,11 +62,18 @@ export function TripsExplorer({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [filters, setFilters] = useState<Filters>(initialFilters);
   const [filterOpen, setFilterOpen] = useState(true);
-
-  useEffect(() => {
+  const [prevTripsState, setPrevTripsState] = useState({
+    trips: initialTrips,
+    pagination: initialPagination,
+  });
+  if (
+    prevTripsState.trips !== initialTrips ||
+    prevTripsState.pagination !== initialPagination
+  ) {
+    setPrevTripsState({ trips: initialTrips, pagination: initialPagination });
     setTrips(initialTrips);
     setPagination(initialPagination);
-  }, [initialTrips, initialPagination]);
+  }
 
   const navigateTo = useCallback(
     (nextFilters: Filters, nextPage: number) => {
