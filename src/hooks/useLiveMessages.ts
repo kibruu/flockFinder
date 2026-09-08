@@ -4,19 +4,15 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { MessageRecord } from "@/lib/messages";
 
 const POLL_INTERVAL_MS = 4000;
-const POLL_BATCH_LIMIT = 100;
 
 export function useLiveMessages(url: string, enabled: boolean) {
   const [messages, setMessages] = useState<MessageRecord[]>([]);
   const lastIdRef = useRef<string | null>(null);
 
-  const reset = useCallback(() => {
-    setMessages([]);
-    lastIdRef.current = null;
-  }, []);
-
   useEffect(() => {
     if (!enabled) return;
+
+    lastIdRef.current = null;
 
     let active = true;
     let polling = false;
@@ -41,15 +37,21 @@ export function useLiveMessages(url: string, enabled: boolean) {
           const fresh: MessageRecord[] = Array.isArray(data.messages)
             ? data.messages
             : [];
-          if (fresh.length > 0) {
-            setMessages((prev) => {
-              const merged = new Map(prev.map((m) => [m.id, m] as const));
-              for (const m of fresh) {
-                if (!merged.has(m.id)) merged.set(m.id, m);
-              }
-              return [...merged.values()];
-            });
-            lastIdRef.current = fresh[fresh.length - 1].id;
+          if (useCursor) {
+            if (fresh.length > 0) {
+              setMessages((prev) => {
+                const merged = new Map(prev.map((m) => [m.id, m] as const));
+                for (const m of fresh) {
+                  merged.set(m.id, m);
+                }
+                return [...merged.values()];
+              });
+              lastIdRef.current = fresh[fresh.length - 1].id;
+            }
+          } else {
+            setMessages(fresh);
+            lastIdRef.current =
+              fresh.length > 0 ? fresh[fresh.length - 1].id : null;
           }
         }
       } catch {
@@ -66,7 +68,6 @@ export function useLiveMessages(url: string, enabled: boolean) {
       if (!document.hidden) poll(true);
     };
 
-    reset();
     poll(false);
     document.addEventListener("visibilitychange", onVisibilityChange);
 
@@ -76,7 +77,7 @@ export function useLiveMessages(url: string, enabled: boolean) {
       if (timer) clearTimeout(timer);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
-  }, [url, enabled, reset]);
+  }, [url, enabled]);
 
   const append = useCallback((message: MessageRecord) => {
     setMessages((prev) =>
@@ -84,5 +85,5 @@ export function useLiveMessages(url: string, enabled: boolean) {
     );
   }, []);
 
-  return { messages, append };
+  return { messages, append, setMessages };
 }

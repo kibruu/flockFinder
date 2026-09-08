@@ -59,9 +59,16 @@ export default async function MessagesPage() {
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{conversation.user!.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold truncate">{conversation.user!.name}</p>
+                      {conversation.unreadCount > 0 && (
+                        <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 text-sandstone text-xs font-medium px-1.5">
+                          {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
+                        </span>
+                      )}
+                    </div>
                     <p className="truncate text-sm text-forest/60 dark:text-sandstone/60">
-                      {conversation.lastMessage.content}
+                      {conversation.lastMessage.content.trim() || "Deleted message"}
                     </p>
                   </div>
                   <span className="text-xs text-forest/40 dark:text-sandstone/40">
