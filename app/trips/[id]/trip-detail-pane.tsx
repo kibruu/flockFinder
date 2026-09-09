@@ -331,7 +331,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
     { id: "attendees", label: "Attendees", icon: Users },
     ...(trip.currentUser.rsvp
       ? ([
-          { id: "checklist", label: "Checklist", icon: Bird },
+          { id: "checklist", label: "Trip Sightings Log", icon: Bird },
           { id: "chat", label: "Trip Chat", icon: MessageSquare },
         ] as const)
       : []),

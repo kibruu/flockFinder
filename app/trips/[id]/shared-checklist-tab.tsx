@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { CheckCircle2, Circle, Loader2, Bird, Users, Plus, Undo2, Search } from "lucide-react";
+import { CheckCircle2, Circle, Loader2, Bird, Users, Plus, Minus, Search } from "lucide-react";
 import type { ChecklistEntry } from "@/lib/sightings";
 import { useLiveChecklist } from "@/hooks/useLiveChecklist";
 import { useFieldCompanion } from "@/components/FieldCompanion/launcher";
@@ -37,7 +37,11 @@ export function SharedChecklistTab({
     return () => clearTimeout(t);
   }, [banner]);
 
-  const postEntry = async (action: "increment" | "remove", speciesId: string, count?: number) => {
+  const postEntry = async (
+    action: "increment" | "decrement" | "remove",
+    speciesId: string,
+    count?: number
+  ) => {
     if (pendingSpeciesId) return;
     setPendingSpeciesId(speciesId);
     try {
@@ -52,7 +56,12 @@ export function SharedChecklistTab({
           upsertEntry(data.entry as ChecklistEntry);
           if (action === "increment") {
             setBanner(
-              `+1 to ${data.entry.commonName}. Group count is now ${data.entry.totalCount}.`
+              `+1 ${data.entry.commonName}. You've seen ${data.entry.myCount}; the group has seen ${data.entry.totalCount} birds total.`
+            );
+          }
+          if (action === "decrement") {
+            setBanner(
+              `-1 ${data.entry.commonName}. You've seen ${data.entry.myCount}; the group has seen ${data.entry.totalCount} birds total.`
             );
           }
         } else {
@@ -99,6 +108,8 @@ export function SharedChecklistTab({
 
   const handleAddOne = (entry: ChecklistEntry) => postEntry("increment", entry.speciesId, 1);
 
+  const handleMinusOne = (entry: ChecklistEntry) => postEntry("decrement", entry.speciesId, 1);
+
   const handleRemove = (entry: ChecklistEntry) => {
     if (!confirm(`Remove "${entry.commonName}" from your confirmed sightings?`)) return;
     postEntry("remove", entry.speciesId);
@@ -135,10 +146,10 @@ export function SharedChecklistTab({
         <div>
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
             <Bird className="h-5 w-5 text-teal-600" />
-            Shared Field Checklist
+            Trip Sightings Log
           </h3>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Live: first spotted, total counts, and who&apos;s seen each species.
+            Live: first seen by, total birds, and who&apos;s confirmed each species.
           </p>
         </div>
         <button
@@ -163,7 +174,7 @@ export function SharedChecklistTab({
       {loading && entries.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center">
           <Loader2 className="h-8 w-8 text-teal-500 animate-spin mx-auto mb-3" />
-          <p className="text-gray-500 dark:text-gray-400">Loading checklist…</p>
+          <p className="text-gray-500 dark:text-gray-400">Loading sightings…</p>
         </div>
       ) : entries.length === 0 ? (
         <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center">
@@ -172,7 +183,7 @@ export function SharedChecklistTab({
             No sightings logged yet
           </h3>
           <p className="text-gray-500 dark:text-gray-400 mb-4">
-            Be the first to log a sighting on this expedition.
+            Be the first to log a sighting on this expedition. Target species appear here once one is logged.
           </p>
           <button
             onClick={handleLogSighting}
@@ -197,12 +208,12 @@ export function SharedChecklistTab({
             <select
               value={sortMode}
               onChange={(e) => setSortMode(e.target.value as SortMode)}
-              aria-label="Sort checklist"
+              aria-label="Sort sightings"
               className="px-3 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
             >
               <option value="first">First spotted</option>
               <option value="alpha">Alphabetical</option>
-              <option value="most">Most seen</option>
+              <option value="most">Most birds</option>
             </select>
           </div>
 
@@ -233,53 +244,65 @@ export function SharedChecklistTab({
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="font-medium text-gray-900 dark:text-white truncate">{entry.commonName}</p>
-                      {entry.currentUserVerified && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.5 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-full">
-                          <CheckCircle2 className="h-3 w-3" /> You&apos;ve seen it
-                        </span>
-                      )}
                     </div>
                     <p className="text-sm text-gray-500 dark:text-gray-400 italic">{entry.scientificName}</p>
                     <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
                       <span className="flex items-center gap-1">
                         <Users className="h-3 w-3" />
-                        {entry.verifierCount} birder{entry.verifierCount === 1 ? "" : "s"} · count {entry.totalCount}
+                        Seen by {entry.verifierCount} birder{entry.verifierCount === 1 ? "" : "s"},{" "}
+                        {entry.totalCount} bird{entry.totalCount === 1 ? "" : "s"} total
                       </span>
                       <span>
-                        First: {entry.firstSpottedBy.name} · {formatRelativeTime(entry.firstSpottedAt)}
+                        First seen by {entry.firstSpottedBy.name} · {formatRelativeTime(entry.firstSpottedAt)}
                       </span>
                     </div>
                   </div>
                   {entry.currentUserVerified ? (
                     <div className="flex items-center gap-1.5 flex-shrink-0">
                       <button
-                        onClick={() => handleAddOne(entry)}
+                        onClick={() => handleRemove(entry)}
                         disabled={pendingSpeciesId !== null}
-                        aria-label={`Add one more ${entry.commonName}`}
-                        title="Add one more"
-                        className="flex items-center justify-center h-8 w-8 text-teal-700 dark:text-teal-300 bg-teal-50 dark:bg-teal-900/40 rounded-lg hover:bg-teal-100 dark:hover:bg-teal-900/60 transition-colors disabled:opacity-60"
+                        title="Tap to undo — removes this from your confirmed sightings"
+                        className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors disabled:opacity-60"
                         type="button"
                       >
-                        <Plus className="h-4 w-4" />
-                      </button>
-                      <span className="flex items-center gap-1 px-3 py-1.5 text-sm text-green-700 dark:text-green-400 bg-green-100 dark:bg-green-900/30 rounded-lg">
                         {pendingSpeciesId === entry.speciesId ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
                           <CheckCircle2 className="h-4 w-4" />
                         )}
                         Seen it
-                      </span>
-                      <button
-                        onClick={() => handleRemove(entry)}
-                        disabled={pendingSpeciesId !== null}
-                        aria-label={`Undo — remove ${entry.commonName} from your confirmed sightings`}
-                        title="Undo"
-                        className="flex items-center justify-center h-8 w-8 text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 hover:text-red-600 dark:hover:text-red-400 transition-colors disabled:opacity-60"
-                        type="button"
-                      >
-                        <Undo2 className="h-4 w-4" />
                       </button>
+                      <div className="flex items-center gap-1 px-2 py-1 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">You&apos;ve seen:</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {entry.myCount}
+                        </span>
+                        <div className="flex items-center gap-0.5 ml-1">
+                          <button
+                            onClick={() => handleMinusOne(entry)}
+                            disabled={pendingSpeciesId !== null || entry.myCount <= 1}
+                            aria-label={`Count one fewer ${entry.commonName} than you said`}
+                            title="-1 : you saw one fewer of these"
+                            className="flex items-center gap-0.5 px-1.5 h-6 rounded text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/40 hover:bg-teal-200 dark:hover:bg-teal-900/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            type="button"
+                          >
+                            <Minus className="h-3.5 w-3.5" />
+                            <span className="text-xs font-medium">1</span>
+                          </button>
+                          <button
+                            onClick={() => handleAddOne(entry)}
+                            disabled={pendingSpeciesId !== null}
+                            aria-label={`Count one more ${entry.commonName}`}
+                            title="+1 : you saw one more of these"
+                            className="flex items-center gap-0.5 px-1.5 h-6 rounded text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/40 hover:bg-teal-200 dark:hover:bg-teal-900/60 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            type="button"
+                          >
+                            <Plus className="h-3.5 w-3.5" />
+                            <span className="text-xs font-medium">1</span>
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   ) : (
                     <button
