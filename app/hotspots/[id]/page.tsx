@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, Bird, Calendar, Clock, MapPin, MessageSquare, Navigation, Users } from "lucide-react";
+import { Bird, Calendar, MapPin, MessageSquare, Navigation } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { finalizeExpiredTrips } from "@/lib/trip-status";
 import { LiveBoard } from "./live-board";
+import { BackButton } from "@/components/BackButton";
+import { TripCard } from "@/components/TripCard";
+import { SightingCard } from "@/components/SightingCard";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -157,13 +159,7 @@ export default async function HotspotDetailPage({ params }: Props) {
   return (
     <div className="min-h-screen bg-sandstone dark:bg-forest text-forest dark:text-sandstone">
       <main className="mx-auto max-w-4xl px-4 py-8">
-        <Link
-          href="/map"
-          className="inline-flex items-center gap-1 text-sm font-medium text-forest/60 dark:text-sandstone/60 hover:text-forest dark:hover:text-sandstone"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to map
-        </Link>
+        <BackButton fallbackHref="/map" label="Back to map" />
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-sage/20 dark:border-sage/600 shadow-lg">
           {hotspot.coverImage ? (
@@ -254,37 +250,7 @@ export default async function HotspotDetailPage({ params }: Props) {
             <ul className="mt-4 space-y-3">
               {hotspot.trips.map((trip) => (
                 <li key={trip.id}>
-                  <Link
-                    href={`/trips/${trip.id}`}
-                    className="block rounded-xl border border-sage/20 dark:border-sage/600 p-4 bg-sandstone dark:bg-forest shadow-sm hover:border-sage/40 dark:hover:border-sage/400 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <h3 className="font-semibold text-lg">{trip.title}</h3>
-                        <p className="mt-1 text-sm text-forest/60 dark:text-sandstone/60">
-                          {new Date(trip.date).toLocaleDateString("en-US", {
-                            weekday: "long",
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                            timeZone: "UTC",
-                          })}
-                        </p>
-                        <p className="mt-1 flex items-center gap-1 text-sm text-forest/50 dark:text-sandstone/50">
-                          <Clock className="h-3.5 w-3.5" />
-                          Meet {new Date(trip.meetingTime).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })}
-                          {trip.meetingPoint && ` at ${trip.meetingPoint}`}
-                        </p>
-                      </div>
-                      <div className="text-right text-sm text-forest/50 dark:text-sandstone/50">
-                        <p className="flex items-center justify-end gap-1">
-                          <Users className="h-4 w-4" />
-                          {trip.maxParticipants}
-                        </p>
-                        {trip.host && <p className="mt-1">Hosted by {trip.host.name}</p>}
-                      </div>
-                    </div>
-                  </Link>
+                  <TripCard trip={trip} />
                 </li>
               ))}
             </ul>
@@ -311,36 +277,7 @@ export default async function HotspotDetailPage({ params }: Props) {
           ) : (
             <ul className="mt-4 space-y-3">
               {hotspot.sightings.map((sighting) => (
-                <li
-                  key={sighting.id}
-                  className="flex items-center gap-4 rounded-xl border border-sage/20 dark:border-sage/600 p-4 bg-sandstone dark:bg-forest shadow-sm"
-                >
-                  {sighting.species.imageUrl ? (
-                    <Image
-                      src={sighting.species.imageUrl}
-                      alt={sighting.species.commonName}
-                      width={48}
-                      height={48}
-                      className="h-12 w-12 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-sage/20 dark:bg-sage/30">
-                      <Bird className="h-6 w-6 text-teal-600 dark:text-sage" />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-semibold">{sighting.species.commonName}</p>
-                    <p className="text-sm italic text-forest/50 dark:text-sandstone/50">{sighting.species.scientificName}</p>
-                    {sighting.notes && <p className="mt-1 text-sm text-forest/60 dark:text-sandstone/60">{sighting.notes}</p>}
-                  </div>
-                  <div className="text-right text-sm text-forest/50 dark:text-sandstone/50">
-                    <p className="font-medium text-forest/70 dark:text-sandstone/70">
-                      {sighting.count} {sighting.count === 1 ? "bird" : "birds"}
-                    </p>
-                    <p>by {sighting.user.name}</p>
-                    <p>{new Date(sighting.spottedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}</p>
-                  </div>
-                </li>
+                <SightingCard key={sighting.id} sighting={sighting} />
               ))}
             </ul>
           )}

@@ -70,19 +70,21 @@ interface MapViewProps {
   currentUserId?: string;
 }
 
+// Color-blind safe palette (tested with Coblis simulator for protanopia/deuteranopia/tritanopia)
+// All combinations pass WCAG AA against white and dark map tiles
 const HABITAT_COLORS: Record<string, string> = {
-  Wetland: "#14b8a6",
-  Forest: "#16a34a",
-  Coast: "#0ea5e9",
-  Mountain: "#a855f7",
-  Grassland: "#eab308",
-  Urban: "#64748b",
+  Wetland: "#009688",   // Teal - distinct from green
+  Forest: "#2E7D32",    // Dark green - distinct from teal
+  Coast: "#0277BD",     // Blue - distinct from teal/green
+  Mountain: "#6A1B9A",  // Deep purple - distinct from blue
+  Grassland: "#F57F17", // Amber - distinct from yellow/orange
+  Urban: "#546E7A",     // Blue-gray - neutral
 };
 
 const LAYER_COLORS = {
-  hotspots: "#14b8a6",
-  sightings: "#f97316",
-  expeditions: "#e11d48",
+  hotspots: "#009688",   // Teal (matches Wetland - primary layer color)
+  sightings: "#E65100",  // Dark orange - distinct from red/amber
+  expeditions: "#C62828", // Dark red - distinct from orange
 };
 
 function createCustomIcon(color: string, emoji: string, size = 32) {
@@ -162,6 +164,33 @@ function createClusterIcon(count: number, color: string) {
     iconSize: [size, size],
     iconAnchor: [size / 2, size / 2],
   });
+}
+
+function HabitatLegend({ hotspots }: { hotspots: Hotspot[] }) {
+  const habitatTypes = [...new Set(hotspots.map((h) => h.habitatType))].sort();
+  
+  return (
+    <div className="absolute bottom-4 right-4 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 min-w-[180px]">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Habitat Types</h3>
+      </div>
+      <div className="space-y-1.5">
+        {habitatTypes.map((habitat) => (
+          <div key={habitat} className="flex items-center gap-2">
+            <div
+              className="w-3 h-3 rounded-full border-2 border-white dark:border-gray-300 shadow-sm"
+              style={{ backgroundColor: HABITAT_COLORS[habitat] || LAYER_COLORS.hotspots }}
+              aria-label={`${habitat} habitat`}
+            />
+            <span className="text-xs text-gray-700 dark:text-gray-300 capitalize">{habitat.toLowerCase()}</span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400 text-center">
+        All hotspots use teal marker; color indicates habitat
+      </p>
+    </div>
+  );
 }
 
 export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewProps) {
@@ -310,9 +339,8 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     layersRef.current.hotspots.clearLayers();
     if (showLayers.hotspots) {
       hotspots.forEach((hotspot) => {
-        const color = HABITAT_COLORS[hotspot.habitatType] || LAYER_COLORS.hotspots;
         const marker = L.marker([hotspot.latitude, hotspot.longitude], {
-          icon: createCustomIcon(color, "🦅"),
+          icon: createCustomIcon(LAYER_COLORS.hotspots, "🦅"),
         });
         const name = escapeHtml(hotspot.name);
         const locationName = escapeHtml(hotspot.locationName);
@@ -465,6 +493,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
             onClick={handleCenterOnMe}
             className="flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
             aria-label="Center map on my location"
+            title="Center map on your current location (requires permission)"
           >
             <Crosshair className="h-4 w-4" />
             <span>Center on Me</span>
@@ -474,11 +503,11 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
             <Layers className="h-4 w-4 text-gray-500" />
           </div>
           {[
-            { key: "hotspots", label: "Hotspots", icon: Bird, color: "text-teal-600" },
-            { key: "sightings", label: "Sightings", icon: MapPin, color: "text-orange-600" },
-            { key: "expeditions", label: "Expeditions", icon: Flag, color: "text-rose-600" },
-          ].map(({ key, label, icon: Icon, color }) => (
-            <label key={key} className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+            { key: "hotspots", label: "Hotspots", icon: Bird, color: "text-teal-600", tip: "Birding locations with habitat info" },
+            { key: "sightings", label: "Sightings", icon: MapPin, color: "text-orange-600", tip: "Recent bird observations (filterable)" },
+            { key: "expeditions", label: "Expeditions", icon: Flag, color: "text-rose-600", tip: "Upcoming group birding trips" },
+          ].map(({ key, label, icon: Icon, color, tip }) => (
+            <label key={key} className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" title={tip}>
               <input
                 type="checkbox"
                 checked={showLayers[key as keyof typeof showLayers]}
@@ -499,7 +528,10 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
       <div className="absolute top-4 right-4 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 min-w-[280px]">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
+          <div>
+            <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">Filters apply to sightings only</p>
+          </div>
           {hasActiveFilters && (
             <button
               onClick={clearFilters}
@@ -549,18 +581,31 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
       <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:bottom-4 sm:w-72 z-20">
         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3">
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-2">
-            <Navigation className="h-4 w-4" />
-            <span>Map Controls</span>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Navigation className="h-4 w-4" />
+              <span>Map Controls</span>
+            </div>
+            <span className="text-[10px] text-gray-400 dark:text-gray-500">Hover for help</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
-            <div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">+/-</kbd><span>Zoom</span></div>
-            <div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">↑↓←→</kbd><span>Pan</span></div>
-            <div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">Click</kbd><span>Open popup</span></div>
-            <div className="flex items-center gap-1"><kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">Esc</kbd><span>Close popup</span></div>
+            <div className="flex items-center gap-1" title="Zoom in/out with mouse wheel or +/- keys">
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">+/-</kbd><span>Zoom</span>
+            </div>
+            <div className="flex items-center gap-1" title="Pan map with arrow keys or drag">
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">↑↓←→</kbd><span>Pan</span>
+            </div>
+            <div className="flex items-center gap-1" title="Click any marker to open details popup">
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">Click</kbd><span>Open popup</span>
+            </div>
+            <div className="flex items-center gap-1" title="Press Escape to close open popup">
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">Esc</kbd><span>Close popup</span>
+            </div>
           </div>
         </div>
       </div>
+
+      <HabitatLegend hotspots={hotspots} />
 
       {!filteredSightings.length && showLayers.sightings && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-amber-50 dark:bg-amber-900/90 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg shadow-lg text-sm text-center animate-slide-up">

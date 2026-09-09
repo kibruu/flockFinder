@@ -15,7 +15,9 @@ const HABITAT_STYLES: Record<string, string> = {
   Wetland: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300",
   Forest: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
   Coast: "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300",
-  Mountain: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  Mountain: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
+  Grassland: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
+  Urban: "bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-300",
 };
 
 export default async function HotspotsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
