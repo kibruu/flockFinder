@@ -547,9 +547,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                   </h3>
                   <div className="grid gap-3 sm:grid-cols-2">
                     {trip.targetSpecies.map((species) => (
-                      <div
+                      <Link
                         key={species.id}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+                        href={`/species/${species.id}?from=trip`}
+                        title={`View ${species.commonName} in the species guide`}
+                        className="group flex items-center gap-3 p-3 rounded-lg bg-gray-50 hover:bg-teal-50 hover:ring-1 hover:ring-teal-500/40 transition-colors dark:bg-gray-700/50 dark:hover:bg-teal-900/20"
                       >
                         {species.imageUrl ? (
                           <Image
@@ -568,7 +570,8 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                           <p className="font-medium text-gray-900 dark:text-white truncate">{species.commonName}</p>
                           <p className="text-sm text-gray-500 dark:text-gray-400 italic">{species.scientificName}</p>
                         </div>
-                      </div>
+                        <ChevronRight className="h-4 w-4 flex-shrink-0 text-gray-400 group-hover:text-teal-600 transition-colors" />
+                      </Link>
                     ))}
                   </div>
                 </div>

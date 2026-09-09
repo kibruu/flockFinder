@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bird, Search, Volume2 } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { RarityBadge, ConservationBadge } from "@/components/species-badges";
 
 export const metadata: Metadata = {
   title: "Species Catalog — FlockFinder",
@@ -11,20 +12,6 @@ export const metadata: Metadata = {
 };
 
 type SearchParams = { [key: string]: string | string[] | undefined };
-
-const RARITY_STYLES: Record<string, string> = {
-  Common: "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300",
-  Uncommon: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
-  Rare: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300",
-  Accidental: "bg-purple-100 text-purple-800 dark:bg-purple-900/40 dark:text-purple-300",
-};
-
-const CONSERVATION_STYLES: Record<string, string> = {
-  Endangered: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  Threatened: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300",
-  Vulnerable: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-  "Near Threatened": "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
-};
 
 function filterHref(q: string, rarity: string, category: string): string {
   const sp = new URLSearchParams();
@@ -156,31 +143,25 @@ export default async function SpeciesPage({ searchParams }: { searchParams: Prom
             {species.map((s) => (
               <div
                 key={s.id}
-                className="group overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+                className="group relative overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
-                <div className="relative h-40 overflow-hidden">
+                <div className="relative h-48 overflow-hidden bg-gray-100 dark:bg-gray-800">
                   {s.imageUrl ? (
                     <Image
                       src={s.imageUrl}
                       alt={s.commonName}
                       fill
                       sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                      className="object-cover"
+                      className="object-contain"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sage/40 via-teal/20 to-amber/30">
+                    <div className="flex h-full w-full items-center justify-center">
                       <Bird className="h-12 w-12 text-teal-600/60" />
                     </div>
                   )}
                   <div className="absolute left-2 top-2 flex flex-col gap-1">
-                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${RARITY_STYLES[s.rarity] ?? "bg-gray-200 text-gray-700"}`}>
-                      {s.rarity}
-                    </span>
-                    {s.conservationStatus && (
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${CONSERVATION_STYLES[s.conservationStatus] ?? "bg-gray-200 text-gray-700"}`}>
-                        {s.conservationStatus}
-                      </span>
-                    )}
+                    <RarityBadge rarity={s.rarity} />
+                    {s.conservationStatus && <ConservationBadge status={s.conservationStatus} />}
                   </div>
                   {lifeListIds.has(s.id) && (
                     <span className="absolute right-2 top-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800 dark:bg-green-900/60 dark:text-green-300">
@@ -203,7 +184,7 @@ export default async function SpeciesPage({ searchParams }: { searchParams: Prom
                         target="_blank"
                         rel="noopener noreferrer"
                         title={`Play ${s.commonName} call`}
-                        className="inline-flex items-center gap-1 rounded-full bg-sage/20 px-2 py-1 text-xs font-medium text-forest/80 transition-colors hover:bg-sage/40 dark:bg-sage/30 dark:text-sandstone/80 dark:hover:bg-sage/50"
+                        className="relative z-10 inline-flex items-center gap-1 rounded-full bg-sage/20 px-2 py-1 text-xs font-medium text-forest/80 transition-colors hover:bg-sage/40 dark:bg-sage/30 dark:text-sandstone/80 dark:hover:bg-sage/50"
                       >
                         <Volume2 className="h-3.5 w-3.5" />
                         Call
@@ -211,6 +192,11 @@ export default async function SpeciesPage({ searchParams }: { searchParams: Prom
                     )}
                   </div>
                 </div>
+                <Link
+                  href={`/species/${s.id}`}
+                  aria-label={`View ${s.commonName} in the species guide`}
+                  className="absolute inset-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-teal-500 rounded-xl"
+                />
               </div>
             ))}
           </div>
