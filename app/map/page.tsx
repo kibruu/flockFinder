@@ -3,6 +3,7 @@ import { MapView } from "@/components/MapViewClient";
 import { db } from "@/lib/db";
 import { getSession, parseStringArray } from "@/lib/auth";
 import { loadRecentSightings } from "@/lib/sightings";
+import { finalizeExpiredTrips } from "@/lib/trip-status";
 import type { Hotspot, Trip } from "@/components/MapView";
 
 async function getHotspots(): Promise<Hotspot[]> {
@@ -23,6 +24,7 @@ async function getHotspots(): Promise<Hotspot[]> {
 }
 
 async function getTrips(): Promise<Trip[]> {
+  await finalizeExpiredTrips();
   const trips = await db.trip.findMany({
     where: {
       status: "UPCOMING",

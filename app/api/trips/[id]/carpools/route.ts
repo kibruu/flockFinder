@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { finalizeExpiredTrips } from "@/lib/trip-status";
 
 export async function POST(
   request: NextRequest,
@@ -18,6 +19,8 @@ export async function POST(
     if (!originArea || !departureTime || !totalSeats) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+
+    await finalizeExpiredTrips();
 
     const trip = await db.trip.findUnique({ where: { id }, select: { id: true, status: true } });
     if (!trip || trip.status !== "UPCOMING") {

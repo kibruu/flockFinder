@@ -5,6 +5,7 @@ import Image from "next/image";
 import { ArrowLeft, Bird, Calendar, Clock, MapPin, MessageSquare, Navigation, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
+import { finalizeExpiredTrips } from "@/lib/trip-status";
 import { LiveBoard } from "./live-board";
 
 type Props = { params: Promise<{ id: string }> };
@@ -49,6 +50,7 @@ type HotspotDetail = {
 };
 
 async function getHotspotDetail(id: string): Promise<HotspotDetail | null> {
+  await finalizeExpiredTrips();
   const hotspot = await db.hotspot.findUnique({
     where: { id },
     include: {

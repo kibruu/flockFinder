@@ -5,10 +5,12 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import type { TripDetail } from "@/types/trip";
 import { parseTripRsvpRole, parseTripStatus } from "@/types/domain";
+import { finalizeExpiredTrips } from "@/lib/trip-status";
 
 type Props = { params: Promise<{ id: string }> };
 
 async function getTrip(id: string, currentUserId: string): Promise<TripDetail | null> {
+  await finalizeExpiredTrips();
   const trip = await db.trip.findUnique({
     where: { id },
     include: {

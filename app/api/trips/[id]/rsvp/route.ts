@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { isTripStatus, parseTripRsvpRole } from "@/types/domain";
+import { finalizeExpiredTrips } from "@/lib/trip-status";
 
 const SELF_RSVP_ROLES = ["SELF_DRIVE", "PASSENGER", "DRIVER"] as const;
 
@@ -22,6 +23,8 @@ export async function POST(
     if (!parsedRole || !(SELF_RSVP_ROLES as readonly string[]).includes(parsedRole)) {
       return NextResponse.json({ error: "Invalid role. Use SELF_DRIVE, PASSENGER, or DRIVER." }, { status: 400 });
     }
+
+    await finalizeExpiredTrips();
 
     const trip = await db.trip.findUnique({
       where: { id },

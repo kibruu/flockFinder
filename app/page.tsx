@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { TripCard } from "@/components/TripCard";
 import type { TripListItem } from "@/types/trip";
 import { parseTripStatus } from "@/types/domain";
+import { finalizeExpiredTrips } from "@/lib/trip-status";
 
 export const metadata = {
   title: "FlockFinder — Meetup + Strava for Birders",
@@ -142,6 +143,7 @@ function timeLabel(iso: string): string {
 }
 
 export default async function HomePage() {
+  await finalizeExpiredTrips();
   const [stats, trips, ticker] = await Promise.all([getStats(), getUpcomingTrips(), getTicker()]);
 
   const statCards = [

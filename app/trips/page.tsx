@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import type { TripListItem } from "@/types/trip";
 import { isTripStatus, parseTripStatus } from "@/types/domain";
+import { finalizeExpiredTrips } from "@/lib/trip-status";
 
 type SearchParams = { [key: string]: string | string[] | undefined };
 
@@ -22,6 +23,7 @@ async function getCatalog() {
 }
 
 async function getTrips(searchParams: SearchParams) {
+  await finalizeExpiredTrips();
   const status = typeof searchParams.status === "string" ? searchParams.status : undefined;
   const hotspotId = typeof searchParams.hotspotId === "string" ? searchParams.hotspotId : undefined;
   const speciesId = typeof searchParams.speciesId === "string" ? searchParams.speciesId : undefined;

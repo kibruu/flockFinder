@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { releasePassengerBooking } from "../shared";
+import { finalizeExpiredTrips } from "@/lib/trip-status";
 
 export async function POST(
   request: NextRequest,
@@ -19,6 +20,8 @@ export async function POST(
     if (!offerId || !passengerId) {
       return NextResponse.json({ error: "Offer ID and passenger ID required" }, { status: 400 });
     }
+
+    await finalizeExpiredTrips();
 
     try {
       const offer = await db.$transaction(async (tx) => {
