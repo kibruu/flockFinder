@@ -16,13 +16,19 @@ export async function POST(
     const { id } = await params;
     const body = await request.json().catch(() => null);
     const speciesId = typeof body?.speciesId === "string" ? body.speciesId : "";
-    const action = body?.action === "increment" || body?.action === "remove" ? body.action : "";
+    const action =
+      body?.action === "increment" || body?.action === "decrement" || body?.action === "remove"
+        ? body.action
+        : "";
     const count = Number.isInteger(body?.count) ? (body.count as number) : 1;
     if (!speciesId) {
       return NextResponse.json({ error: "Species is required" }, { status: 400 });
     }
     if (!action) {
-      return NextResponse.json({ error: "Action must be 'increment' or 'remove'" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Action must be 'increment', 'decrement' or 'remove'" },
+        { status: 400 }
+      );
     }
 
     const [trip, rsvp, species] = await Promise.all([
@@ -49,8 +55,9 @@ export async function POST(
       return NextResponse.json({ error: "Species not found" }, { status: 404 });
     }
 
-    if (action === "increment") {
-      const byCount = Math.max(1, Math.min(99, count));
+    if (action !== "remove") {
+      const magnitude = Math.max(1, Math.min(99, Math.abs(count)));
+      const byCount = magnitude * (action === "decrement" ? -1 : 1);
       const sighting = await bumpSightingCount(
         { userId: session.id, tripId: id, speciesId },
         byCount

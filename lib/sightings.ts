@@ -34,6 +34,7 @@ export type ChecklistEntry = {
   totalCount: number;
   verifierCount: number;
   currentUserVerified: boolean;
+  myCount: number;
 };
 
 export type SpeciesOption = {
@@ -252,6 +253,7 @@ export async function getTripChecklist(
       } | null;
       totalCount: number;
       verifierIds: Set<string>;
+      userCounts: Map<string, number>;
     }
   >();
 
@@ -263,6 +265,7 @@ export async function getTripChecklist(
       firstSpotted: null,
       totalCount: 0,
       verifierIds: new Set<string>(),
+      userCounts: new Map<string, number>(),
     };
     if (!entry.firstSpotted || row.spottedAt < entry.firstSpotted.spottedAt) {
       entry.firstSpotted = {
@@ -274,6 +277,7 @@ export async function getTripChecklist(
     }
     entry.totalCount += row.count;
     entry.verifierIds.add(row.userId);
+    entry.userCounts.set(row.userId, (entry.userCounts.get(row.userId) ?? 0) + row.count);
     bySpecies.set(row.speciesId, entry);
   }
 
@@ -292,6 +296,7 @@ export async function getTripChecklist(
       totalCount: entry.totalCount,
       verifierCount: entry.verifierIds.size,
       currentUserVerified: entry.verifierIds.has(currentUserId),
+      myCount: entry.userCounts.get(currentUserId) ?? 0,
     }))
     .sort((a, b) => b.firstSpottedAt.localeCompare(a.firstSpottedAt));
 }
