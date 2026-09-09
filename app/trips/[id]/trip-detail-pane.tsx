@@ -175,6 +175,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
 
   const handleCarpoolCancel = async (offerId: string) => {
     if (!trip) return;
+    if (!confirm("Cancel your booked seat? Your seat will be released for other carpoolers.")) return;
     try {
       const res = await fetch(`/api/trips/${params.id}/carpools/cancel`, {
         method: "POST",
@@ -182,6 +183,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
         body: JSON.stringify({ offerId }),
       });
       if (res.ok) {
+        const offer = trip.carpoolOffers.find((o) => o.id === offerId);
+        const remaining = offer ? offer.availableSeats + 1 : 0;
+        setCarpoolMsg(
+          `Your booking was canceled. ${remaining} of ${offer?.totalSeats ?? 0} seats now available on this offer.`
+        );
         setTrip((prev) =>
           prev
             ? {
