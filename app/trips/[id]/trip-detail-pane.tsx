@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -17,6 +17,7 @@ import {
   Loader2,
   X,
   MessageSquare,
+  CheckCircle2,
 } from "lucide-react";
 import type { TripDetail } from "@/types/trip";
 import { MessageThread } from "@/components/MessageThread";
@@ -32,6 +33,14 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
   const [trip, setTrip] = useState<TripDetail | null>(initialTrip);
   const [activeTab, setActiveTab] = useState<"details" | "carpools" | "attendees" | "chat" | "checklist">("details");
   const [showCarpoolModal, setShowCarpoolModal] = useState(false);
+
+  const [carpoolMsg, setCarpoolMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!carpoolMsg) return;
+    const t = setTimeout(() => setCarpoolMsg(null), 6000);
+    return () => clearTimeout(t);
+  }, [carpoolMsg]);
 
   const handleRSVP = async (role: "SELF_DRIVE" | "PASSENGER") => {
     if (!trip) return;
@@ -120,6 +129,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
         body: JSON.stringify({ offerId }),
       });
       if (res.ok) {
+        const offer = trip.carpoolOffers.find((o) => o.id === offerId);
+        const remaining = offer ? Math.max(0, offer.availableSeats - 1) : 0;
+        setCarpoolMsg(
+          `You claimed a seat! ${remaining} of ${offer?.totalSeats ?? 0} seats left on this offer.`
+        );
         setTrip((prev) =>
           prev
             ? {
@@ -383,18 +397,33 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                 </div>
               </div>
 
-              <div className="space-y-2 text-sm">
+              <div className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                   <Calendar className="h-4 w-4 flex-shrink-0" />
-                  <span>{date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      Date
+                    </p>
+                    <p>{date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                   <Clock className="h-4 w-4 flex-shrink-0" />
-                  <span>{meetingTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      Meeting time
+                    </p>
+                    <p>{meetingTime.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                   <MapPin className="h-4 w-4 flex-shrink-0" />
-                  <span className="truncate">{trip.meetingPoint}</span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                      Meet at
+                    </p>
+                    <p className="truncate">{trip.meetingPoint}</p>
+                  </div>
                 </div>
                 <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
                   <Users className="h-4 w-4 flex-shrink-0" />
@@ -592,6 +621,16 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                 )}
               </div>
 
+              {carpoolMsg && (
+                <div
+                  role="status"
+                  className="flex items-center gap-2 px-4 py-3 rounded-xl bg-teal-600 text-white text-sm font-medium"
+                >
+                  <CheckCircle2 className="h-5 w-5 flex-shrink-0" />
+                  {carpoolMsg}
+                </div>
+              )}
+
               {trip.carpoolOffers.length === 0 ? (
                 <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-8 text-center">
                   <Car className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -613,12 +652,15 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                               Driver
                             </span>
                           </div>
-                          <div className="flex flex-wrap gap-3 text-sm text-gray-600 dark:text-gray-400">
+                          <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-600 dark:text-gray-400">
                             <div className="flex items-center gap-1">
-                              <MapPin className="h-4 w-4" /> {offer.originArea}
+                              <MapPin className="h-4 w-4" />
+                              <span className="font-medium text-gray-500 dark:text-gray-400">Pickup:</span>{" "}
+                              {offer.originArea}
                             </div>
                             <div className="flex items-center gap-1">
                               <Clock className="h-4 w-4" />{" "}
+                              <span className="font-medium text-gray-500 dark:text-gray-400">Departure:</span>{" "}
                               {new Date(offer.departureTime).toLocaleString([], {
                                 month: "short",
                                 day: "numeric",
