@@ -35,6 +35,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
   const [showCarpoolModal, setShowCarpoolModal] = useState(false);
 
   const [carpoolMsg, setCarpoolMsg] = useState<string | null>(null);
+  const [highlightOfferId, setHighlightOfferId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!carpoolMsg) return;
@@ -648,7 +649,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                   {trip.carpoolOffers.map((offer) => (
                     <div
                       key={offer.id}
-                      className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5"
+                      className={`bg-white dark:bg-gray-800 rounded-2xl border p-5 ${
+                        highlightOfferId === offer.id
+                          ? "border-teal-500 ring-2 ring-teal-500/40"
+                          : "border-gray-200 dark:border-gray-700"
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -756,10 +761,12 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                 Attendees ({trip.rsvps.length})
               </h3>
               <div className="space-y-3">
-                {trip.rsvps.map((rsvp) => (
+                {trip.rsvps.map((rsvp) => {
+                  const driverOffer = trip.carpoolOffers.find((o) => o.driverId === rsvp.userId);
+                  return (
                   <div
                     key={rsvp.id}
-                    className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
+                    className="flex items-center gap-4 flex-wrap p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
                   >
                     {rsvp.user.avatarUrl ? (
                       <Image
@@ -808,8 +815,22 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                         Message
                       </Link>
                     )}
+                    {driverOffer && (
+                      <button
+                        onClick={() => {
+                          setActiveTab("carpools");
+                          setHighlightOfferId(driverOffer.id);
+                        }}
+                        className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-gray-800 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+                        type="button"
+                      >
+                        <Car className="h-3.5 w-3.5" />
+                        View Carpool
+                      </button>
+                    )}
                   </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
