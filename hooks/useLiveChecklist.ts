@@ -76,5 +76,12 @@ export function useLiveChecklist(url: string, enabled: boolean) {
     });
   }, []);
 
-  return { entries, loading, upsertEntry };
+  // Remove a single entry (e.g. right after the current user undoes a verification
+  // and no other attendee has seen the species).
+  const removeEntry = useCallback((speciesId: string) => {
+    revisionRef.current += 1;
+    setEntries((prev) => prev.filter((e) => e.speciesId !== speciesId));
+  }, []);
+
+  return { entries, loading, upsertEntry, removeEntry };
 }

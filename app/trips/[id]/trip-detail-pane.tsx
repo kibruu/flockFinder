@@ -840,7 +840,6 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
               tripId={params.id as string}
               hotspotId={trip.hotspot?.id ?? ""}
               hotspotName={trip.hotspot?.name ?? ""}
-              currentUserId={trip.currentUser.id}
               targetSpecies={trip.targetSpecies}
             />
           )}

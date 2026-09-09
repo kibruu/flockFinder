@@ -185,6 +185,35 @@ export async function verifySighting(
   return { sighting, alreadyVerified: false, isNewToLifeList };
 }
 
+export async function bumpSightingCount(
+  input: { userId: string; tripId: string; speciesId: string },
+  byCount: number
+): Promise<SightingRecord | null> {
+  const existing = await db.sighting.findFirst({
+    where: { userId: input.userId, tripId: input.tripId, speciesId: input.speciesId },
+    include: SIGHTING_INCLUDE,
+  });
+  if (!existing) return null;
+  const updated = await db.sighting.update({
+    where: { id: existing.id },
+    data: { count: Math.max(1, existing.count + byCount) },
+    include: SIGHTING_INCLUDE,
+  });
+  return serializeSighting(updated, input.userId);
+}
+
+export async function removeTripSighting(
+  input: { userId: string; tripId: string; speciesId: string }
+): Promise<boolean> {
+  const existing = await db.sighting.findFirst({
+    where: { userId: input.userId, tripId: input.tripId, speciesId: input.speciesId },
+    select: { id: true },
+  });
+  if (!existing) return false;
+  await db.sighting.delete({ where: { id: existing.id } });
+  return true;
+}
+
 export async function getTripChecklist(
   tripId: string,
   currentUserId: string
