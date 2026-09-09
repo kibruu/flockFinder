@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Image from "next/image";
 import { CheckCircle2, Circle, Loader2, Bird, Users } from "lucide-react";
 import type { ChecklistEntry } from "@/lib/sightings";
 import { useLiveChecklist } from "@/hooks/useLiveChecklist";
@@ -110,9 +111,11 @@ export function SharedChecklistTab({
             >
               <div className="flex items-start gap-3">
                 {entry.imageUrl ? (
-                  <img
+                  <Image
                     src={entry.imageUrl}
                     alt={entry.commonName}
+                    width={48}
+                    height={48}
                     className="h-12 w-12 rounded-lg object-cover"
                   />
                 ) : (

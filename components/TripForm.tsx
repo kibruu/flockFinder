@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { X, MapPin, Calendar, Clock, Bird, Loader2, Search } from "lucide-react";
 
 interface Hotspot {
@@ -352,7 +353,7 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
                       className="w-full px-3 py-2 text-left hover:bg-teal-50 dark:hover:bg-teal-900/30 flex items-center gap-2 text-sm"
                     >
                       {s.imageUrl ? (
-                        <img src={s.imageUrl} alt="" className="h-5 w-5 rounded object-cover" />
+                        <Image src={s.imageUrl} alt="" width={20} height={20} className="h-5 w-5 rounded object-cover" />
                       ) : (
                         <Bird className="h-4 w-4 text-teal-500" />
                       )}
@@ -372,7 +373,7 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
                       key={id}
                       className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full"
                     >
-                      {s.imageUrl && <img src={s.imageUrl} alt="" className="h-4 w-4 rounded object-cover" />}
+                      {s.imageUrl && <Image src={s.imageUrl} alt="" width={16} height={16} className="h-4 w-4 rounded object-cover" />}
                       {s.commonName}
                       <button type="button" onClick={() => removeSpecies(id)} className="ml-1 hover:text-red-500">
                         &times;

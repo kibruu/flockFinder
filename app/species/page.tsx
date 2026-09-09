@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { Bird, Search, Volume2 } from "lucide-react";
 import { db } from "@/lib/db";
@@ -159,7 +160,13 @@ export default async function SpeciesPage({ searchParams }: { searchParams: Prom
               >
                 <div className="relative h-40 overflow-hidden">
                   {s.imageUrl ? (
-                    <img src={s.imageUrl} alt={s.commonName} className="h-full w-full object-cover" />
+                    <Image
+                      src={s.imageUrl}
+                      alt={s.commonName}
+                      fill
+                      sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                      className="object-cover"
+                    />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-sage/40 via-teal/20 to-amber/30">
                       <Bird className="h-12 w-12 text-teal-600/60" />

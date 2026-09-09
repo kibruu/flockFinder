@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, Bird, Calendar, Clock, MapPin, MessageSquare, Navigation, Users } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
@@ -164,11 +165,15 @@ export default async function HotspotDetailPage({ params }: Props) {
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-sage/20 dark:border-sage/600 shadow-lg">
           {hotspot.coverImage ? (
-            <img
-              src={hotspot.coverImage}
-              alt={hotspot.name}
-              className="h-56 w-full object-cover"
-            />
+            <div className="relative h-56 w-full">
+              <Image
+                src={hotspot.coverImage}
+                alt={hotspot.name}
+                fill
+                sizes="(min-width: 1024px) 896px, 100vw"
+                className="object-cover"
+              />
+            </div>
           ) : (
             <div className="h-56 w-full bg-gradient-to-br from-sage/40 via-teal/20 to-amber/30 dark:from-forest dark:via-teal/10 dark:to-amber/20 flex items-center justify-center">
               <Bird className="h-16 w-16 text-teal-600/60" />
@@ -309,9 +314,11 @@ export default async function HotspotDetailPage({ params }: Props) {
                   className="flex items-center gap-4 rounded-xl border border-sage/20 dark:border-sage/600 p-4 bg-sandstone dark:bg-forest shadow-sm"
                 >
                   {sighting.species.imageUrl ? (
-                    <img
+                    <Image
                       src={sighting.species.imageUrl}
                       alt={sighting.species.commonName}
+                      width={48}
+                      height={48}
                       className="h-12 w-12 rounded-full object-cover"
                     />
                   ) : (

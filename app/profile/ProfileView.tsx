@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import Link from "next/link";
 import { User, Car, Award, MapPin, Feather, Settings, LogOut, ChevronRight, Plus } from "lucide-react";
 import { useSession } from "@/hooks/useAuth";
@@ -121,9 +122,12 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
               <div className="text-center">
                 <div className="relative w-24 h-24 mx-auto mb-4">
                   {user.avatarUrl ? (
-                    <img
+                    <Image
                       src={user.avatarUrl}
                       alt={user.name}
+                      width={96}
+                      height={96}
+                      unoptimized
                       className="w-full h-full rounded-full object-cover border-4 border-sage/30 dark:border-sage/600"
                     />
                   ) : (
@@ -348,9 +352,11 @@ export default function ProfileView({ user, lifeList, stats }: ProfileViewProps)
                         className="flex items-center gap-4 p-3 rounded-lg bg-sage/100 dark:bg-sage/800/50 hover:bg-sage/200 dark:hover:bg-sage/800 transition-colors"
                       >
                         {species.imageUrl ? (
-                          <img
+                          <Image
                             src={species.imageUrl}
                             alt={species.commonName}
+                            width={48}
+                            height={48}
                             className="h-12 w-12 rounded-lg object-cover"
                           />
                         ) : (

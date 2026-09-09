@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import Image from "next/image";
 import { X, Minus, Plus, Camera, Binoculars, Loader2, CheckCircle, CloudOff } from "lucide-react";
 import type {
   SpeciesOption,
@@ -164,9 +165,11 @@ export function FieldCompanion({
                   type="button"
                 >
                   {resolved.chosen?.imageUrl ? (
-                    <img
+                    <Image
                       src={resolved.chosen.imageUrl}
                       alt={resolved.chosen.commonName}
+                      width={32}
+                      height={32}
                       className="h-8 w-8 rounded object-cover"
                     />
                   ) : (
@@ -213,7 +216,7 @@ export function FieldCompanion({
                             type="button"
                           >
                             {s.imageUrl ? (
-                              <img src={s.imageUrl} alt={s.commonName} className="h-8 w-8 rounded object-cover" />
+                              <Image src={s.imageUrl} alt={s.commonName} width={32} height={32} className="h-8 w-8 rounded object-cover" />
                             ) : (
                               <span className="h-8 w-8 rounded bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center text-teal-500 text-xs">
                                 🦉

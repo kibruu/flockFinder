@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Bird, CalendarDays, Car, Compass, PlusCircle, ArrowRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { TripCard } from "@/components/TripCard";
@@ -275,7 +276,7 @@ export default async function HomePage() {
                 <li key={item.id} className="flex items-center gap-4 px-5 py-3">
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sage/20">
                     {item.species.imageUrl ? (
-                      <img src={item.species.imageUrl} alt={item.species.commonName} className="h-full w-full object-cover" />
+                      <Image src={item.species.imageUrl} alt={item.species.commonName} width={40} height={40} className="h-full w-full object-cover" />
                     ) : (
                       <Bird className="h-5 w-5 text-teal-600" />
                     )}

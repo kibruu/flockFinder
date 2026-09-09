@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { ArrowLeft, Users } from "lucide-react";
@@ -44,9 +45,12 @@ export default async function MessageThreadPage({ params }: Props) {
 
         <div className="mt-4 flex items-center gap-3">
           {user.avatarUrl ? (
-            <img
+            <Image
               src={user.avatarUrl}
               alt={user.name}
+              width={48}
+              height={48}
+              unoptimized
               className="h-12 w-12 rounded-full object-cover"
             />
           ) : (

@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, useDemoSwitch } from "@/hooks/useAuth";
-import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Zap, MessageSquare } from "lucide-react";
+import Image from "next/image";
+import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Zap, MessageSquare, Trees } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/trips", label: "Trips & Carpools", icon: LayoutDashboard },
   { href: "/map", label: "Field Map", icon: MapPin },
   { href: "/species", label: "Species Catalog", icon: BookOpen },
-  { href: "/hotspots", label: "Hotspots", icon: MapPin },
+  { href: "/hotspots", label: "Hotspots", icon: Trees },
   { href: "/messages", label: "Messages", icon: MessageSquare },
 ];
 
@@ -96,10 +97,13 @@ export function Navbar() {
                   className="flex items-center gap-2 p-1 rounded-lg hover:bg-sage/20 dark:hover:bg-sage/800 transition-colors"
                 >
                   {user.avatarUrl ? (
-                    <img
+                    <Image
                       src={user.avatarUrl}
                       alt={user.name}
-                      className="h-8 w-8 rounded-full"
+                      width={32}
+                      height={32}
+                      unoptimized
+                      className="h-8 w-8 rounded-full object-cover"
                     />
                   ) : (
                     <User className="h-8 w-8 text-forest/60 dark:text-sandstone/60" />

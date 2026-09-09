@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { Loader2, Send, Users, Edit2, Trash2, Smile, Check, X } from "lucide-react";
 import { useLiveMessages } from "@/hooks/useLiveMessages";
 import { formatRelativeTime } from "@/lib/time";
@@ -159,9 +160,12 @@ export function MessageThread({
                 className={`flex items-start gap-2 ${own ? "flex-row-reverse" : ""}`}
               >
                 {message.sender.avatarUrl ? (
-                  <img
+                  <Image
                     src={message.sender.avatarUrl}
                     alt={message.sender.name}
+                    width={32}
+                    height={32}
+                    unoptimized
                     className="h-8 w-8 flex-shrink-0 rounded-full object-cover"
                   />
                 ) : (

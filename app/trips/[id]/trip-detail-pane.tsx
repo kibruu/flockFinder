@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ChevronRight,
   MapPin,
@@ -351,11 +352,15 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
           <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 sticky top-24">
             <div className="text-center mb-6">
               {trip.hotspot?.coverImage ? (
-                <img
-                  src={trip.hotspot.coverImage}
-                  alt={trip.hotspot.name}
-                  className="w-full h-48 rounded-xl object-cover mb-4"
-                />
+                <div className="relative w-full h-48 rounded-xl overflow-hidden mb-4">
+                  <Image
+                    src={trip.hotspot.coverImage}
+                    alt={trip.hotspot.name}
+                    fill
+                    sizes="(min-width: 1024px) 33vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
               ) : (
                 <div className="w-full h-48 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center mb-4">
                   <Bird className="h-16 w-16 text-teal-400" />
@@ -406,7 +411,7 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                   </p>
                   <div className="flex items-center gap-2">
                     {trip.host.avatarUrl ? (
-                      <img src={trip.host.avatarUrl} alt={trip.host.name} className="h-8 w-8 rounded-full object-cover" />
+                      <Image src={trip.host.avatarUrl} alt={trip.host.name} width={32} height={32} unoptimized className="h-8 w-8 rounded-full object-cover" />
                     ) : (
                       <div className="h-8 w-8 rounded-full bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
                         <Users className="h-4 w-4 text-teal-400" />
@@ -511,9 +516,11 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                         className="flex items-center gap-3 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
                       >
                         {species.imageUrl ? (
-                          <img
+                          <Image
                             src={species.imageUrl}
                             alt={species.commonName}
+                            width={48}
+                            height={48}
                             className="h-12 w-12 rounded-lg object-cover"
                           />
                         ) : (
@@ -707,9 +714,12 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                     className="flex items-center gap-4 p-3 rounded-lg bg-gray-50 dark:bg-gray-700/50"
                   >
                     {rsvp.user.avatarUrl ? (
-                      <img
+                      <Image
                         src={rsvp.user.avatarUrl}
                         alt={rsvp.user.name}
+                        width={40}
+                        height={40}
+                        unoptimized
                         className="h-10 w-10 rounded-full object-cover"
                       />
                     ) : (

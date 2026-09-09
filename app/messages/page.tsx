@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Inbox, Users } from "lucide-react";
@@ -48,9 +49,12 @@ export default async function MessagesPage() {
                   className="flex items-center gap-3 rounded-xl border border-sage/20 dark:border-sage/600 p-3 bg-sandstone dark:bg-forest shadow-sm hover:border-sage/40 dark:hover:border-sage/400 transition-colors"
                 >
                   {conversation.user!.avatarUrl ? (
-                    <img
+                    <Image
                       src={conversation.user!.avatarUrl}
                       alt={conversation.user!.name}
+                      width={44}
+                      height={44}
+                      unoptimized
                       className="h-11 w-11 rounded-full object-cover"
                     />
                   ) : (
