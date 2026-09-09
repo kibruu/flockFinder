@@ -17,6 +17,7 @@ import {
   Loader2,
   X,
   MessageSquare,
+  Mail,
   CheckCircle2,
 } from "lucide-react";
 import type { TripDetail } from "@/types/trip";
@@ -814,8 +815,8 @@ export function TripDetailPane({ initialTrip }: TripDetailPaneProps) {
                         href={`/messages/${rsvp.userId}`}
                         className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-teal-700 dark:text-teal-300 bg-teal-100 dark:bg-teal-900/30 rounded-lg hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-colors"
                       >
-                        <MessageSquare className="h-3.5 w-3.5" />
-                        Message
+                        <Mail className="h-3.5 w-3.5" />
+                        Private message
                       </Link>
                     )}
                     {driverOffer && (
