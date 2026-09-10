@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as L from "leaflet";
 import { ensureMarkerCluster, createClusterLayer } from "@/lib/leafletWithCluster";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair } from "lucide-react";
+import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair, ArrowLeft } from "lucide-react";
 
 function escapeHtml(str: string): string {
   return str
@@ -168,12 +168,11 @@ function createClusterIcon(count: number, color: string) {
 
 function HabitatLegend({ hotspots }: { hotspots: Hotspot[] }) {
   const habitatTypes = [...new Set(hotspots.map((h) => h.habitatType))].sort();
-  
+  if (!habitatTypes.length) return null;
+
   return (
-    <div className="absolute bottom-4 right-4 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 min-w-[180px]">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-gray-900 dark:text-white text-sm">Habitat Types</h3>
-      </div>
+    <div className="absolute bottom-4 right-4 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 min-w-[160px]">
+      <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-2">Habitat Types</h3>
       <div className="space-y-1.5">
         {habitatTypes.map((habitat) => (
           <div key={habitat} className="flex items-center gap-2">
@@ -186,9 +185,6 @@ function HabitatLegend({ hotspots }: { hotspots: Hotspot[] }) {
           </div>
         ))}
       </div>
-      <p className="mt-2 text-[10px] text-gray-500 dark:text-gray-400 text-center">
-        All hotspots use teal marker; color indicates habitat
-      </p>
     </div>
   );
 }
@@ -245,6 +241,11 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     }
     return result;
   }, [sightings, hotspots, debouncedFilters, dateCutoff]);
+
+  const filteredHotspots = useMemo(() => {
+    if (!debouncedFilters.habitat) return hotspots;
+    return hotspots.filter((h) => h.habitatType === debouncedFilters.habitat);
+  }, [hotspots, debouncedFilters.habitat]);
 
   const updateTileLayer = useCallback((darkMode: boolean) => {
     darkModeRef.current = darkMode;
@@ -338,7 +339,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
     layersRef.current.hotspots.clearLayers();
     if (showLayers.hotspots) {
-      hotspots.forEach((hotspot) => {
+      filteredHotspots.forEach((hotspot) => {
         const marker = L.marker([hotspot.latitude, hotspot.longitude], {
           icon: createCustomIcon(LAYER_COLORS.hotspots, "🦅"),
         });
@@ -362,7 +363,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         marker.addTo(layersRef.current.hotspots);
       });
     }
-  }, [hotspots, showLayers.hotspots, mapReady]);
+  }, [filteredHotspots, showLayers.hotspots, mapReady]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !mapReady) return;
@@ -488,6 +489,14 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       )}
 
       <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+        <button
+          onClick={() => window.history.back()}
+          className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+          aria-label="Go back"
+          title="Go back"
+        >
+          <ArrowLeft className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+        </button>
         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col gap-1">
           <button
             onClick={handleCenterOnMe}
@@ -530,7 +539,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">Filters apply to sightings only</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">Habitat filter applies to sightings &amp; hotspots</p>
           </div>
           {hasActiveFilters && (
             <button
@@ -579,7 +588,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:bottom-4 sm:w-72 z-20">
+      <div className="absolute bottom-4 left-4 z-20 w-64">
         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
