@@ -148,7 +148,7 @@ export function FieldCompanionLauncher({ children }: { children: React.ReactNode
           >
             <Binoculars className="h-6 w-6" />
             {pendingCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-500 text-white text-xs font-semibold flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 min-w-[1.25rem] h-5 px-1.5 rounded-full bg-amber-800 text-white text-xs font-semibold flex items-center justify-center">
                 {pendingCount}
               </span>
             )}

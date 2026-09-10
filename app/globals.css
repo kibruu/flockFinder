@@ -89,3 +89,23 @@ body {
   background-color: var(--color-accent);
   color: white;
 }
+
+:root.dark .leaflet-container .leaflet-control-attribution {
+  background: rgba(30, 45, 38, 0.9);
+  color: #d1d5db;
+}
+:root.dark .leaflet-container .leaflet-control-attribution a {
+  color: #6ee7b7;
+}
+:root.dark .leaflet-container a.leaflet-popup-close-button {
+  color: #9ca3af;
+}
+:root.dark .leaflet-container a.leaflet-popup-close-button:hover,
+:root.dark .leaflet-container a.leaflet-popup-close-button:focus {
+  color: #e5e7eb;
+}
+:root.dark .leaflet-popup-content-wrapper,
+:root.dark .leaflet-popup-tip {
+  background: #1e2d26;
+  color: #e5e7eb;
+}

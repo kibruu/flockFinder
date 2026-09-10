@@ -352,10 +352,10 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
               <span style="font-size: 1.5rem;">🦅</span>
               <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${name}</h3>
             </div>
-            <p style="margin: 0 0 8px; color: #4a4a4a; font-size: 0.875rem;">${locationName}</p>
-            <p style="margin: 0 0 8px; color: #64748b; font-size: 0.8rem;"><strong>Habitat:</strong> ${habitatType}</p>
-            ${amenities ? `<p style="margin: 0 0 8px; color: #64748b; font-size: 0.8rem;"><strong>Amenities:</strong> ${amenities}</p>` : ""}
-            <a href="/hotspots/${hotspot.id}" style="color: #14b8a6; font-weight: 500; text-decoration: none; font-size: 0.875rem;">View Details →</a>
+            <p style="margin: 0 0 8px; color: #374151; font-size: 0.875rem;">${locationName}</p>
+            <p style="margin: 0 0 8px; color: #475569; font-size: 0.8rem;"><strong>Habitat:</strong> ${habitatType}</p>
+            ${amenities ? `<p style="margin: 0 0 8px; color: #475569; font-size: 0.8rem;"><strong>Amenities:</strong> ${amenities}</p>` : ""}
+            <a href="/hotspots/${hotspot.id}" style="color: #0f766e; font-weight: 500; text-decoration: none; font-size: 0.875rem;">View Details →</a>
           </div>
         `;
         marker.bindPopup(popupContent, { maxWidth: 300 });
@@ -409,12 +409,12 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
             <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${speciesName}</h3>
             ${sighting.isCurrentUser ? '<span class="px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full">Your sighting</span>' : ""}
           </div>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem; font-style: italic;">${sciName}</p>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Count:</strong> ${sighting.count}</p>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Observer:</strong> ${userName}</p>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Date:</strong> ${dateStr}</p>
-          <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Location:</strong> ${hotspotName}</p>
-          ${notes ? `<p style="margin: 8px 0 0; color: #4a4a4a; font-size: 0.8rem; font-style: italic;">"${notes}"</p>` : ""}
+          <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem; font-style: italic;">${sciName}</p>
+          <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>Count:</strong> ${sighting.count}</p>
+          <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>Observer:</strong> ${userName}</p>
+          <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>Date:</strong> ${dateStr}</p>
+          <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>Location:</strong> ${hotspotName}</p>
+          ${notes ? `<p style="margin: 8px 0 0; color: #374151; font-size: 0.8rem; font-style: italic;">"${notes}"</p>` : ""}
         </div>
       `;
         marker.bindPopup(popupContent, { maxWidth: 300 });
@@ -446,12 +446,12 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
               <span style="font-size: 1.5rem;">🚩</span>
               <h3 style="font-weight: 600; color: #1B3B2B; margin: 0;">${title}</h3>
             </div>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Date:</strong> ${dateStr}</p>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Meet:</strong> ${timeStr}</p>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>At:</strong> ${meetingPoint}</p>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Host:</strong> ${hostName}</p>
-            <p style="margin: 0 0 4px; color: #64748b; font-size: 0.8rem;"><strong>Targets:</strong> ${targetPreview}</p>
-            <a href="/trips/${trip.id}" style="color: #e11d48; font-weight: 500; text-decoration: none; font-size: 0.875rem;">Join Trip →</a>
+            <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>Date:</strong> ${dateStr}</p>
+            <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>Meet:</strong> ${timeStr}</p>
+            <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>At:</strong> ${meetingPoint}</p>
+            <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>Host:</strong> ${hostName}</p>
+            <p style="margin: 0 0 4px; color: #475569; font-size: 0.8rem;"><strong>Targets:</strong> ${targetPreview}</p>
+            <a href="/trips/${trip.id}" style="color: #be123c; font-weight: 500; text-decoration: none; font-size: 0.875rem;">Join Trip →</a>
           </div>
         `;
         marker.bindPopup(popupContent, { maxWidth: 300 });
@@ -562,7 +562,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
           </button>
           <div className="border-t border-gray-200 dark:border-gray-700 my-1" />
           <div className="flex items-center gap-2 px-2">
-            <Layers className="h-4 w-4 text-gray-500" />
+            <Layers className="h-4 w-4 text-gray-600" />
           </div>
           {[
             { key: "hotspots", label: "Hotspots", icon: Bird, color: "text-teal-600", tip: "Birding locations with habitat info" },
@@ -578,7 +578,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
               />
               <Icon className={`h-4 w-4 ${color}`} />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-gray-600">
                 {key === "hotspots" && filteredHotspots.length}
                 {key === "sightings" && filteredSightings.length}
                 {key === "expeditions" && filteredTrips.length}
@@ -592,7 +592,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">Filters apply to all visible layers</p>
+            <p className="text-[11px] text-gray-600 dark:text-gray-400">Filters apply to all visible layers</p>
           </div>
           {hasActiveFilters && (
             <button
@@ -648,12 +648,12 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Navigation className="h-4 w-4" />
-              <span>Map Controls</span>
+              <Navigation className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+              <span className="text-gray-700 dark:text-gray-300">Map Controls</span>
             </div>
-            <span className="text-[10px] text-gray-400 dark:text-gray-500">Hover for help</span>
+            <span className="text-[10px] text-gray-600 dark:text-gray-400">Hover for help</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 dark:text-gray-400">
+          <div className="grid grid-cols-2 gap-2 text-xs text-gray-700 dark:text-gray-300">
             <div className="flex items-center gap-1" title="Zoom in/out with mouse wheel or +/- keys">
               <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 rounded">+/-</kbd><span>Zoom</span>
             </div>

@@ -72,7 +72,7 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2 text-sm font-medium text-forest/80 hover:text-forest dark:text-sandstone/80 dark:hover:text-sandstone transition-colors"
+                className="flex items-center gap-2 text-sm font-medium text-forest-deep hover:text-forest dark:text-sandstone dark:hover:text-white transition-colors"
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
@@ -83,7 +83,7 @@ export function Navbar() {
           <div className="flex items-center gap-4">
             <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-lg text-forest/70 hover:bg-sage/20 dark:text-sandstone/70 dark:hover:bg-sage/800 transition-colors"
+              className="p-2 rounded-lg text-forest-deep hover:bg-sage/20 dark:text-sandstone dark:hover:bg-sage/800 transition-colors"
               aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
               suppressHydrationWarning
             >
@@ -106,7 +106,7 @@ export function Navbar() {
                       className="h-8 w-8 rounded-full object-cover"
                     />
                   ) : (
-                    <User className="h-8 w-8 text-forest/60 dark:text-sandstone/60" />
+                    <User className="h-8 w-8 text-forest-deep dark:text-sandstone" />
                   )}
                 </button>
 
@@ -114,11 +114,11 @@ export function Navbar() {
                   <div className="absolute right-0 mt-2 w-56 rounded-lg bg-sandstone border border-sage/20 shadow-lg dark:bg-forest dark:border-sage/20 py-2">
                     <div className="px-4 py-2 border-b border-sage/20 dark:border-sage/20">
                       <p className="text-sm font-medium text-forest dark:text-sandstone">{user.name}</p>
-                      <p className="text-xs text-forest/60 dark:text-sandstone/60">{user.email}</p>
+                      <p className="text-xs text-forest-deep dark:text-sandstone">{user.email}</p>
                     </div>
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-forest/80 hover:bg-sage/100 dark:text-sandstone/80 dark:hover:bg-sage/800"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-forest-deep hover:bg-sage/100 dark:text-sandstone dark:hover:bg-sage/800"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <User className="h-4 w-4" />
@@ -129,7 +129,7 @@ export function Navbar() {
                         const res = await fetch("/api/auth/logout", { method: "POST" });
                         if (res.ok) window.location.href = "/";
                       }}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-forest/80 hover:bg-sage/100 dark:text-sandstone/80 dark:hover:bg-sage/800"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-forest-deep hover:bg-sage/100 dark:text-sandstone dark:hover:bg-sage/800"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign out
@@ -156,7 +156,7 @@ export function Navbar() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-forest/70 hover:bg-sage/20 dark:text-sandstone/70 dark:hover:bg-sage/800"
+              className="md:hidden p-2 rounded-lg text-forest-deep hover:bg-sage/20 dark:text-sandstone dark:hover:bg-sage/800"
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-navigation"
@@ -173,7 +173,7 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 text-forest/80 hover:bg-sage/100 dark:text-sandstone/80 dark:hover:bg-sage/800 rounded-lg"
+                  className="flex items-center gap-3 px-3 py-2 text-forest-deep hover:bg-sage/100 dark:text-sandstone dark:hover:bg-sage/800 rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <item.icon className="h-5 w-5" />
@@ -218,7 +218,7 @@ export function Navbar() {
                 className={`px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                   user?.email?.includes(demo)
                     ? "bg-amber text-forest font-bold"
-                    : "bg-sage/20 text-forest/70 hover:bg-sage/30 dark:bg-sage/30 dark:text-sandstone/70 dark:hover:bg-sage/40"
+                    : "bg-sage/20 text-forest-deep hover:bg-sage/30 dark:bg-sage/30 dark:text-sandstone dark:hover:bg-sage/40"
                 }`}
               >
                 {demo.charAt(0).toUpperCase() + demo.slice(1)}

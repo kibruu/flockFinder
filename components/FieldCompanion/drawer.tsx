@@ -181,14 +181,14 @@ export function FieldCompanion({
                     <span className="block truncate font-medium text-gray-900 dark:text-white">
                       {resolved.chosen?.commonName}
                     </span>
-                    <span className="block text-xs text-gray-500 dark:text-gray-400 italic truncate">
+                    <span className="block text-xs text-gray-600 dark:text-gray-400 italic truncate">
                       {resolved.chosen?.scientificName}
                     </span>
                   </span>
                 </button>
                 <button
                   onClick={() => setSpeciesId("")}
-                  className="p-2 text-gray-500 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/40"
+                  className="p-2 text-gray-600 hover:text-red-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/40"
                   type="button"
                   aria-label="Clear species"
                 >
@@ -203,7 +203,7 @@ export function FieldCompanion({
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search common or scientific name…"
-                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                    className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
                     autoFocus
                   />
                   {filtered.length > 0 && (
@@ -226,7 +226,7 @@ export function FieldCompanion({
                               <span className="block truncate text-sm font-medium text-gray-900 dark:text-white">
                                 {s.commonName}
                               </span>
-                              <span className="block text-xs text-gray-500 dark:text-gray-400 italic truncate">
+                              <span className="block text-xs text-gray-600 dark:text-gray-400 italic truncate">
                                 {s.scientificName}
                               </span>
                             </span>
@@ -282,7 +282,7 @@ export function FieldCompanion({
               >
                 <Plus className="h-4 w-4" />
               </button>
-              <span className="ml-2 text-xs text-gray-400">individuals</span>
+              <span className="ml-2 text-xs text-gray-600">individuals</span>
             </div>
           </div>
 
@@ -316,7 +316,7 @@ export function FieldCompanion({
               rows={2}
               maxLength={2000}
               placeholder="e.g., First-winter male, actively foraging in willows."
-              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
 
@@ -325,14 +325,14 @@ export function FieldCompanion({
               Photo URL (optional)
             </label>
             <div className="relative">
-              <Camera className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Camera className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
                 id="sighting-photo"
                 type="url"
                 value={photoUrl}
                 onChange={(e) => setPhotoUrl(e.target.value)}
                 placeholder="https://…"
-                className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+                className="w-full pl-9 pr-4 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
               />
             </div>
           </div>
