@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession, useDemoSwitch } from "@/hooks/useAuth";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import Image from "next/image";
-import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Zap, MessageSquare, Trees, Bird } from "lucide-react";
+import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, MessageSquare, Trees, Bird } from "lucide-react";
 
 // Logo colors - easily customizable
 const LOGO_BG_LIGHT = "bg-sage/20";
@@ -55,8 +55,8 @@ export function Navbar() {
           <div className="flex h-16 items-center justify-between">
 <div className="flex items-center gap-2">
                 <Link href="/" className="flex items-center gap-2 group" aria-label="FlockFinder home">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage/20 dark:bg-sage/800 hover:bg-teal-600 dark:hover:bg-teal-500 transition-colors">
-                    <Bird className="h-6 w-6 text-teal-600 dark:text-sandstone group-hover:text-white transition-colors" />
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-full ${LOGO_BG_LIGHT} ${LOGO_BG_DARK} ${LOGO_BG_HOVER_LIGHT} ${LOGO_BG_HOVER_DARK} transition-colors`}>
+                    <Bird className={`h-6 w-6 ${LOGO_BIRD_LIGHT} ${LOGO_BIRD_DARK} ${LOGO_BIRD_HOVER} transition-colors`} />
                   </div>
                 </Link>
                 <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
@@ -76,11 +76,13 @@ export function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
-              <Bird className="h-8 w-8 text-amber" />
-              <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
-            </Link>
-          </div>
+             <Link href="/" className="flex items-center gap-2 group" aria-label="FlockFinder home">
+               <div className={`flex h-10 w-10 items-center justify-center rounded-full ${LOGO_BG_LIGHT} ${LOGO_BG_DARK} ${LOGO_BG_HOVER_LIGHT} ${LOGO_BG_HOVER_DARK} transition-colors`}>
+                 <Bird className={`h-6 w-6 ${LOGO_BIRD_LIGHT} ${LOGO_BIRD_DARK} ${LOGO_BIRD_HOVER} transition-colors`} />
+               </div>
+             </Link>
+             <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
+           </div>
 
           <div className="hidden md:flex md:items-center md:gap-6">
             {NAV_ITEMS.map((item) => (
