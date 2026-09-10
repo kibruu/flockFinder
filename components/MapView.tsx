@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as L from "leaflet";
 import { ensureMarkerCluster, createClusterLayer } from "@/lib/leafletWithCluster";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { MapPin, Bird, Flag, X, Navigation, Search, Filter, Layers, Crosshair, ArrowLeft } from "lucide-react";
+import { MapPin, Bird, Flag, Navigation, Layers, Crosshair, ArrowLeft } from "lucide-react";
 
 function escapeHtml(str: string): string {
   return str
@@ -171,7 +171,7 @@ function HabitatLegend({ hotspots }: { hotspots: Hotspot[] }) {
   if (!habitatTypes.length) return null;
 
   return (
-    <div className="absolute bottom-4 right-4 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 min-w-[160px]">
+    <div className="absolute bottom-4 right-4 z-[500] bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 min-w-[160px]">
       <h3 className="font-semibold text-gray-900 dark:text-white text-sm mb-2">Habitat Types</h3>
       <div className="space-y-1.5">
         {habitatTypes.map((habitat) => (
@@ -213,6 +213,8 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
   const [centerOnMe, setCenterOnMe] = useState(false);
   const [geolocationError, setGeolocationError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
+  const activePopupRef = useRef<{ layer: string; lat: number; lng: number } | null>(null);
+  const isRebuildingRef = useRef(false);
 
   const [mountEpoch] = useState(() => Date.now());
   const dateCutoff = useMemo(() => {
@@ -305,6 +307,29 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         }
       });
 
+      currentMap.on("popupopen", (e) => {
+        const ll = e.popup.getLatLng();
+        if (!ll) return;
+        let layerName = "";
+        Object.entries(layersRef.current).forEach(([name, fg]) => {
+          if (fg && fg instanceof L.FeatureGroup) {
+            fg.eachLayer((l) => {
+              if (l instanceof L.Marker && l.getPopup() === e.popup) {
+                layerName = name;
+              }
+            });
+          }
+        });
+        if (layerName) {
+          activePopupRef.current = { layer: layerName, lat: ll.lat, lng: ll.lng };
+        }
+      });
+      currentMap.on("popupclose", () => {
+        if (!isRebuildingRef.current) {
+          activePopupRef.current = null;
+        }
+      });
+
       setMapReady(true);
     });
 
@@ -337,6 +362,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
   useEffect(() => {
     if (!mapInstanceRef.current || !mapReady) return;
 
+    isRebuildingRef.current = true;
     layersRef.current.hotspots.clearLayers();
     if (showLayers.hotspots) {
       filteredHotspots.forEach((hotspot) => {
@@ -363,11 +389,13 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         marker.addTo(layersRef.current.hotspots);
       });
     }
+    isRebuildingRef.current = false;
   }, [filteredHotspots, showLayers.hotspots, mapReady]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !mapReady) return;
 
+    isRebuildingRef.current = true;
     const sightingsLayer = layersRef.current.sightings;
     if (!sightingsLayer) return;
     sightingsLayer.clearLayers();
@@ -403,11 +431,13 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       marker.bindPopup(popupContent, { maxWidth: 300 });
       marker.addTo(sightingsLayer);
     });
+    isRebuildingRef.current = false;
   }, [filteredSightings, showLayers.sightings, mapReady]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !mapReady) return;
 
+    isRebuildingRef.current = true;
     layersRef.current.expeditions.clearLayers();
     if (showLayers.expeditions) {
       trips.forEach((trip) => {
@@ -438,7 +468,28 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         marker.addTo(layersRef.current.expeditions);
       });
     }
+    isRebuildingRef.current = false;
   }, [trips, showLayers.expeditions, mapReady]);
+
+  useEffect(() => {
+    if (!mapInstanceRef.current || !mapReady) return;
+    const map = mapInstanceRef.current;
+    const target = activePopupRef.current;
+    if (!target) return;
+    let layer: L.FeatureGroup | L.MarkerClusterGroup | null = null;
+    if (target.layer === "hotspots") layer = layersRef.current.hotspots;
+    else if (target.layer === "sightings") layer = layersRef.current.sightings;
+    else if (target.layer === "expeditions") layer = layersRef.current.expeditions;
+    if (!layer) return;
+    layer.eachLayer((l) => {
+      if (l instanceof L.Marker) {
+        const ll = l.getLatLng();
+        if (Math.abs(ll.lat - target.lat) < 0.0001 && Math.abs(ll.lng - target.lng) < 0.0001) {
+          l.openPopup();
+        }
+      }
+    });
+  }, [filteredHotspots, filteredSightings, showLayers, mapReady]);
 
   const handleCenterOnMe = () => {
     setGeolocationError(null);
@@ -479,16 +530,16 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
   return (
     <div className="relative h-full w-full">
-      <div ref={mapRef} className="absolute inset-0" style={{ zIndex: 0 }} />
+      <div ref={mapRef} className="absolute inset-0" />
 
       {geolocationError && (
-        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-30 bg-red-50 dark:bg-red-900/90 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-slide-down">
+        <div className="absolute top-4 left-1/2 -translate-x-1/2 z-[800] bg-red-50 dark:bg-red-900/90 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 px-4 py-2 rounded-lg shadow-lg flex items-center gap-2 animate-slide-down">
           <span>{geolocationError}</span>
           <button onClick={() => setGeolocationError(null)} className="text-red-500 hover:text-red-700">✕</button>
         </div>
       )}
 
-      <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+      <div className="absolute top-4 left-4 z-[500] flex flex-col gap-2">
         <button
           onClick={() => window.history.back()}
           className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
@@ -535,7 +586,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         </div>
       </div>
 
-      <div className="absolute top-4 right-4 z-20 bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 min-w-[280px]">
+      <div className="absolute top-4 right-4 z-[500] bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3 min-w-[280px]">
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
@@ -588,7 +639,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-4 z-20 w-64">
+      <div className="absolute bottom-4 left-4 z-[500] w-64">
         <div className="bg-white/95 dark:bg-gray-900/95 backdrop-blur-sm rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-3">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -617,7 +668,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       <HabitatLegend hotspots={hotspots} />
 
       {!filteredSightings.length && showLayers.sightings && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 bg-amber-50 dark:bg-amber-900/90 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg shadow-lg text-sm text-center animate-slide-up">
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[800] bg-amber-50 dark:bg-amber-900/90 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg shadow-lg text-sm text-center animate-slide-up">
           No sightings found matching current filters.
         </div>
       )}
