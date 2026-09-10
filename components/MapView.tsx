@@ -499,6 +499,18 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     });
   }, [filteredHotspots, filteredSightings, filteredTrips, showLayers, mapReady]);
 
+  useEffect(() => {
+    if (!mapInstanceRef.current || !mapReady) return;
+    const allCoords: L.LatLngExpression[] = [];
+    if (showLayers.hotspots) filteredHotspots.forEach((h) => allCoords.push([h.latitude, h.longitude]));
+    if (showLayers.sightings) filteredSightings.forEach((s) => allCoords.push([s.latitude, s.longitude]));
+    if (showLayers.expeditions) filteredTrips.forEach((t) => allCoords.push([t.hotspotLatitude, t.hotspotLongitude]));
+    if (allCoords.length > 0) {
+      mapInstanceRef.current.fitBounds(L.latLngBounds(allCoords).pad(0.1), { maxZoom: 12, animate: false });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapReady]);
+
   const handleCenterOnMe = () => {
     setGeolocationError(null);
     if (!navigator.geolocation) {
