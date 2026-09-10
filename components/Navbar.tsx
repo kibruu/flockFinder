@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSession, useDemoSwitch } from "@/hooks/useAuth";
 import { useUnreadCount } from "@/hooks/useUnreadCount";
 import Image from "next/image";
-import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Zap, MessageSquare, Trees } from "lucide-react";
+import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Zap, MessageSquare, Trees, Bird } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/trips", label: "Trips & Carpools", icon: LayoutDashboard },
@@ -44,10 +44,10 @@ export function Navbar() {
       <nav className="sticky top-0 z-50 bg-sandstone/95 backdrop-blur-sm border-b border-sage/20 dark:bg-forest/95 dark:border-sage/20">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Zap className="h-8 w-8 text-amber" />
-              <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
-            </div>
+<div className="flex items-center gap-2">
+               <Bird className="h-8 w-8 text-amber" />
+               <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
+             </div>
             <div className="flex items-center gap-4">
               <div className="h-8 w-32 bg-sage/20 animate-pulse rounded dark:bg-sage/30" />
               <div className="h-8 w-24 bg-sage/20 animate-pulse rounded dark:bg-sage/30" />
@@ -64,7 +64,7 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center gap-2">
             <Link href="/" className="flex items-center gap-2">
-              <Zap className="h-8 w-8 text-amber" />
+              <Bird className="h-8 w-8 text-amber" />
               <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
             </Link>
           </div>
