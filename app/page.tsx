@@ -1,31 +1,46 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Bird, CalendarDays, Car, Compass, PlusCircle, ArrowRight } from "lucide-react";
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { TripCard } from "@/components/TripCard";
+import { LiveTicker } from "@/components/LiveTicker";
 import type { TripListItem } from "@/types/trip";
 import { parseTripStatus } from "@/types/domain";
 import { finalizeExpiredTrips } from "@/lib/trip-status";
 
-export const metadata = {
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
   title: "FlockFinder — Meetup + Strava for Birders",
   description: "Join the flock. Schedule outings, coordinate carpools, and log sightings with fellow birders.",
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "FlockFinder — Meetup + Strava for Birders",
+    description: "Join the flock. Schedule outings, coordinate carpools, and log sightings with fellow birders.",
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: "FlockFinder — Meetup + Strava for Birders",
+    description: "Join the flock. Schedule outings, coordinate carpools, and log sightings with fellow birders.",
+  },
 };
 
 type HomeStats = {
-  speciesSeenToday: number;
+  speciesSpotted24h: number;
   upcomingTrips: number;
   openCarpoolSeats: number;
 };
 
 async function getStats(): Promise<HomeStats> {
-  const startOfToday = new Date();
-  startOfToday.setHours(0, 0, 0, 0);
+  const sinceDayStart = new Date(Date.now() - 24 * 60 * 60 * 1000);
 
-  const [speciesSeenToday, upcomingTrips, openSeats] = await Promise.all([
+  const [speciesSpotted, upcomingTrips, openSeats] = await Promise.all([
     db.sighting.groupBy({
       by: ["speciesId"],
-      where: { spottedAt: { gte: startOfToday } },
+      where: { spottedAt: { gte: sinceDayStart } },
     }),
     db.trip.count({ where: { status: "UPCOMING", date: { gte: new Date() } } }),
     db.carpoolOffer.aggregate({
@@ -35,7 +50,7 @@ async function getStats(): Promise<HomeStats> {
   ]);
 
   return {
-    speciesSeenToday: speciesSeenToday.length,
+    speciesSpotted24h: speciesSpotted.length,
     upcomingTrips,
     openCarpoolSeats: openSeats._sum.availableSeats ?? 0,
   };
@@ -132,22 +147,12 @@ async function getTicker(): Promise<TickerItem[]> {
   }));
 }
 
-function timeLabel(iso: string): string {
-  return new Date(iso).toLocaleString("en-US", {
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    timeZone: "UTC",
-  });
-}
-
 export default async function HomePage() {
   await finalizeExpiredTrips();
   const [stats, trips, ticker] = await Promise.all([getStats(), getUpcomingTrips(), getTicker()]);
 
   const statCards = [
-    { label: "Species seen today", value: stats.speciesSeenToday, icon: Bird },
+    { label: "Species spotted (24h)", value: stats.speciesSpotted24h, icon: Bird },
     { label: "Upcoming expeditions", value: stats.upcomingTrips, icon: CalendarDays },
     { label: "Open carpool seats", value: stats.openCarpoolSeats, icon: Car },
   ];
@@ -160,7 +165,7 @@ export default async function HomePage() {
             <h1 className="text-4xl font-bold text-sandstone sm:text-5xl">
               Join the Flock
             </h1>
-            <p className="mt-4 text-lg text-sandstone/85">
+            <p className="mt-4 text-lg text-sandstone">
               FlockFinder is the &ldquo;Meetup + Strava for Birders.&rdquo; Schedule expeditions,
               coordinate carpools, and log sightings with your community.
             </p>
@@ -185,22 +190,22 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pt-10">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           {statCards.map(({ label, value, icon: Icon }) => (
             <div
               key={label}
               className="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm"
             >
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-600/15 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400">
-                <Icon className="h-6 w-6" />
+                <Icon className="h-6 w-6" aria-hidden="true" />
               </div>
-              <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+              <div className="flex flex-col">
+                <dt className="order-2 text-sm text-gray-500 dark:text-gray-400">{label}</dt>
+                <dd className="order-1 text-2xl font-bold text-gray-900 dark:text-white">{value}</dd>
               </div>
             </div>
           ))}
-        </div>
+        </dl>
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-10">
@@ -263,38 +268,17 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-16">
-        <div className="mb-5">
-          <h2 className="text-xl font-bold text-forest dark:text-sandstone">Live Sighting Ticker</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Latest birds spotted by members</p>
-        </div>
-        {ticker.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center text-sm text-gray-500 dark:text-gray-400">
-            No sightings logged yet.
-          </p>
-        ) : (
-          <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-            <ul className="divide-y divide-gray-100 dark:divide-gray-700">
-              {ticker.map((item) => (
-                <li key={item.id} className="flex items-center gap-4 px-5 py-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sage/20">
-                    {item.species.imageUrl ? (
-                      <Image src={item.species.imageUrl} alt={item.species.commonName} width={40} height={40} className="h-full w-full object-cover" />
-                    ) : (
-                      <Bird className="h-5 w-5 text-teal-600" />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium text-gray-900 dark:text-white">{item.species.commonName}</p>
-                    <p className="truncate text-xs text-gray-500 dark:text-gray-400">
-                      {item.user.name} at {item.hotspot.name}
-                    </p>
-                  </div>
-                  <span className="shrink-0 text-xs text-gray-400 dark:text-gray-500">{timeLabel(item.spottedAt)}</span>
-                </li>
-              ))}
-            </ul>
+        <div className="mb-5 flex items-end justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-forest dark:text-sandstone">Live Sighting Ticker</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Latest birds spotted by members</p>
           </div>
-        )}
+          <Link href="/map" className="inline-flex items-center gap-1 text-sm font-medium text-teal-600 hover:underline dark:text-teal-400">
+            On the map
+            <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+        </div>
+        <LiveTicker initial={ticker} />
       </section>
     </div>
   );
