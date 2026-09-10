@@ -305,6 +305,23 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         zoomToBoundsOnClick: true,
       });
 
+      layersRef.current.sightings.on("clusterclick", (cluster) => {
+        const children = cluster.layer.getAllChildMarkers();
+        const species = [...new Set(children.map((m: L.Marker) => m.options.title || "").filter(Boolean))];
+        const preview = species.slice(0, 5).join(", ") + (species.length > 5 ? ` +${species.length - 5} more` : "");
+        const count = cluster.layer.getChildCount();
+        const popup = L.popup()
+          .setLatLng(cluster.layer.getLatLng())
+          .setContent(`
+            <div style="min-width: 180px;">
+              <p style="font-weight: 600; margin: 0 0 4px; color: #1B3B2B;">${count} sighting${count > 1 ? "s" : ""}</p>
+              <p style="margin: 0; color: #64748b; font-size: 0.8rem;">${preview || "Multiple species"}</p>
+              <p style="margin: 6px 0 0; color: #E65100; font-size: 0.75rem; font-style: italic;">Zoom in to see details</p>
+            </div>
+          `);
+        mapInstanceRef.current?.openPopup(popup);
+      });
+
       Object.values(layersRef.current).forEach((layer) => {
         if (layer) layer.addTo(currentMap);
       });
@@ -415,6 +432,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       const marker = L.marker([sighting.latitude, sighting.longitude], {
         icon: isUser ? createUserSightingIcon() : createCustomIcon(LAYER_COLORS.sightings, "📍"),
       });
+      marker.options.title = sighting.speciesName;
       const speciesName = escapeHtml(sighting.speciesName);
         const sciName = escapeHtml(sighting.speciesScientificName);
         const userName = escapeHtml(sighting.userName);
