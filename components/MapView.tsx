@@ -249,6 +249,14 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     return hotspots.filter((h) => h.habitatType === debouncedFilters.habitat);
   }, [hotspots, debouncedFilters.habitat]);
 
+  const filteredTrips = useMemo(() => {
+    if (!debouncedFilters.habitat) return trips;
+    return trips.filter((t) => {
+      const hotspot = hotspots.find((h) => h.id === t.hotspotId);
+      return hotspot?.habitatType === debouncedFilters.habitat;
+    });
+  }, [trips, hotspots, debouncedFilters.habitat]);
+
   const updateTileLayer = useCallback((darkMode: boolean) => {
     darkModeRef.current = darkMode;
     if (tileLayerRef.current) {
@@ -440,7 +448,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     isRebuildingRef.current = true;
     layersRef.current.expeditions.clearLayers();
     if (showLayers.expeditions) {
-      trips.forEach((trip) => {
+      filteredTrips.forEach((trip) => {
         const marker = L.marker([trip.hotspotLatitude, trip.hotspotLongitude], {
           icon: createCustomIcon(LAYER_COLORS.expeditions, "🚩", 36),
         });
@@ -469,7 +477,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       });
     }
     isRebuildingRef.current = false;
-  }, [trips, showLayers.expeditions, mapReady]);
+  }, [filteredTrips, showLayers.expeditions, mapReady]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !mapReady) return;
@@ -489,7 +497,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         }
       }
     });
-  }, [filteredHotspots, filteredSightings, showLayers, mapReady]);
+  }, [filteredHotspots, filteredSightings, filteredTrips, showLayers, mapReady]);
 
   const handleCenterOnMe = () => {
     setGeolocationError(null);
@@ -579,7 +587,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
               <span className="text-xs text-gray-400">
                 {key === "hotspots" && filteredHotspots.length}
                 {key === "sightings" && filteredSightings.length}
-                {key === "expeditions" && trips.length}
+                {key === "expeditions" && filteredTrips.length}
               </span>
             </label>
           ))}
