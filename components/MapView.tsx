@@ -91,7 +91,6 @@ interface MapViewProps {
   hotspots: Hotspot[];
   sightings: Sighting[];
   trips: Trip[];
-  currentUserId?: string;
   focusHotspotId?: string | null;
 }
 
@@ -189,7 +188,7 @@ function HabitatLegend({ hotspots }: { hotspots: Hotspot[] }) {
   );
 }
 
-export function MapView({ hotspots, sightings, trips, currentUserId, focusHotspotId }: MapViewProps) {
+export function MapView({ hotspots, sightings, trips, focusHotspotId }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef({
@@ -211,7 +210,6 @@ export function MapView({ hotspots, sightings, trips, currentUserId, focusHotspo
     dateRange: "",
   });
   const debouncedFilters = useDebouncedValue(filters, 300);
-  const [centerOnMe, setCenterOnMe] = useState(false);
   const [geolocationError, setGeolocationError] = useState<string | null>(null);
   const [mapReady, setMapReady] = useState(false);
   const activePopupRef = useRef<{ layer: string; lat: number; lng: number } | null>(null);
@@ -506,7 +504,6 @@ export function MapView({ hotspots, sightings, trips, currentUserId, focusHotspo
 
   useEffect(() => {
     if (!mapInstanceRef.current || !mapReady) return;
-    const map = mapInstanceRef.current;
     const target = activePopupRef.current;
     if (!target) return;
     let layer: L.FeatureGroup | null = null;
@@ -546,7 +543,6 @@ export function MapView({ hotspots, sightings, trips, currentUserId, focusHotspo
       (position) => {
         const { latitude, longitude } = position.coords;
         mapInstanceRef.current?.setView([latitude, longitude], 12);
-        setCenterOnMe(false);
       },
       (error) => {
         let message = "Unable to retrieve your location";

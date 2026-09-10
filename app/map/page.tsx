@@ -116,7 +116,6 @@ export default async function MapPage({ searchParams }: { searchParams: Promise<
         hotspots={hotspots}
         sightings={sightings}
         trips={trips}
-        currentUserId={currentUserId}
         focusHotspotId={focusHotspotId}
       />
     </div>
