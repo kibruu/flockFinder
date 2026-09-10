@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { Bird, MapPin, CalendarDays, Trees } from "lucide-react";
+import { Bird, MapPin, CalendarDays, Trees, Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { db } from "@/lib/db";
 
 export const metadata: Metadata = {
@@ -20,19 +20,50 @@ const HABITAT_STYLES: Record<string, string> = {
   Urban: "bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-300",
 };
 
+const PAGE_SIZE = 12;
+
 export default async function HotspotsPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
   const habitat = typeof params.habitat === "string" ? params.habitat : "";
+  const q = typeof params.q === "string" ? params.q.trim() : "";
+  const page = Math.max(1, parseInt(typeof params.page === "string" ? params.page : "1", 10) || 1);
 
-  const where = habitat ? { habitatType: habitat } : {};
-  const [hotspots, habitats] = await Promise.all([
+  const where: { habitatType?: string; OR?: { name?: { contains: string }; locationName?: { contains: string }; description?: { contains: string } }[] } = {};
+  if (habitat) where.habitatType = habitat;
+  if (q) {
+    where.OR = [
+      { name: { contains: q } },
+      { locationName: { contains: q } },
+      { description: { contains: q } },
+    ];
+  }
+
+  const [hotspots, total, habitats] = await Promise.all([
     db.hotspot.findMany({
       where,
       include: { _count: { select: { sightings: true, trips: true } } },
       orderBy: { name: "asc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
     }),
+    db.hotspot.count({ where }),
     db.hotspot.findMany({ distinct: ["habitatType"], select: { habitatType: true }, orderBy: { habitatType: "asc" } }),
   ]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+
+  const buildHref = (overrides: Record<string, string | undefined>) => {
+    const sp = new URLSearchParams();
+    if (habitat) sp.set("habitat", habitat);
+    if (q) sp.set("q", q);
+    for (const [key, value] of Object.entries(overrides)) {
+      if (value) sp.set(key, value);
+      else sp.delete(key);
+    }
+    const s = sp.toString();
+    return s ? `/hotspots?${s}` : "/hotspots";
+  };
 
   return (
     <div className="min-h-screen bg-sandstone dark:bg-forest">
@@ -40,14 +71,39 @@ export default async function HotspotsPage({ searchParams }: { searchParams: Pro
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-forest dark:text-sandstone">Hotspot Directory</h1>
           <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-            {hotspots.length} premier birding locations
+            {total} premier birding location{total === 1 ? "" : "s"}
           </p>
         </div>
+
+        <form method="get" action="/hotspots" className="mb-4 flex items-center gap-2">
+          {habitat && <input type="hidden" name="habitat" value={habitat} />}
+          <div className="relative flex-1 max-w-md">
+            <Search className="h-4 w-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="search"
+              name="q"
+              defaultValue={q}
+              placeholder="Search by name or area..."
+              className="w-full pl-9 pr-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-full bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-teal-500"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-4 py-2.5 text-sm font-medium rounded-full bg-teal-600 text-white hover:bg-teal-700 transition-colors"
+          >
+            Search
+          </button>
+          {q && (
+            <Link href={buildHref({ q: undefined })} className="text-sm font-medium text-teal-700 hover:underline dark:text-teal-300">
+              Clear
+            </Link>
+          )}
+        </form>
 
         <div className="mb-8 flex flex-wrap items-center gap-2">
           <span className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">Habitat</span>
           <Link
-            href="/hotspots"
+            href={buildHref({ habitat: undefined })}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               !habitat
                 ? "bg-teal-600 text-white"
@@ -59,7 +115,7 @@ export default async function HotspotsPage({ searchParams }: { searchParams: Pro
           {habitats.map(({ habitatType: value }) => (
             <Link
               key={value}
-              href={value === habitat ? "/hotspots" : `/hotspots?habitat=${encodeURIComponent(value)}`}
+              href={buildHref(value === habitat ? { habitat: undefined } : { habitat: value, page: undefined })}
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 habitat === value
                   ? "bg-teal-600 text-white"
@@ -126,8 +182,51 @@ export default async function HotspotsPage({ searchParams }: { searchParams: Pro
         {hotspots.length === 0 && (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-gray-300 dark:border-gray-700 py-20 text-center">
             <Bird className="h-12 w-12 text-gray-400" />
-            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">No hotspots in this habitat yet.</p>
+            <p className="mt-4 text-sm text-gray-500 dark:text-gray-400">
+              {q
+                ? `No hotspots match "${q}".`
+                : habitat
+                  ? "No hotspots in this habitat yet."
+                  : "No hotspots found."}
+            </p>
+            {(q || habitat) && (
+              <Link href="/hotspots" className="mt-4 text-sm font-medium text-teal-700 hover:underline dark:text-teal-300">
+                Clear all filters
+              </Link>
+            )}
           </div>
+        )}
+
+        {totalPages > 1 && (
+          <nav aria-label="Hotspot pagination" className="mt-8 flex items-center justify-center gap-2">
+            <Link
+              href={buildHref({ page: String(currentPage - 1) })}
+              aria-disabled={currentPage <= 1}
+              className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 ${
+                currentPage <= 1
+                  ? "pointer-events-none opacity-50"
+                  : "hover:border-teal-500/50"
+              }`}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Previous
+            </Link>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Link
+              href={buildHref({ page: String(currentPage + 1) })}
+              aria-disabled={currentPage >= totalPages}
+              className={`inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 px-3 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 ${
+                currentPage >= totalPages
+                  ? "pointer-events-none opacity-50"
+                  : "hover:border-teal-500/50"
+              }`}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </nav>
         )}
       </div>
     </div>

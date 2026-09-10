@@ -12,11 +12,19 @@ interface TripCardProps {
     meetingTime: string;
     meetingPoint: string;
     maxParticipants: number | null;
+    rsvpCount?: number | null;
     host: { id: string; name: string; avatarUrl: string | null } | null;
   };
 }
 
 export function TripCard({ trip }: TripCardProps) {
+  const capacity =
+    trip.rsvpCount != null
+      ? `${trip.rsvpCount} / ${trip.maxParticipants ?? "\u221E"}`
+      : trip.maxParticipants != null
+        ? `${trip.maxParticipants} max`
+        : "No limit";
+
   return (
     <Link
       href={`/trips/${trip.id}`}
@@ -35,9 +43,9 @@ export function TripCard({ trip }: TripCardProps) {
           </p>
         </div>
         <div className="text-right text-sm text-forest/50 dark:text-sandstone/50">
-          <p className="flex items-center justify-end gap-1">
+          <p className="flex items-center justify-end gap-1" title={trip.maxParticipants != null ? `Capacity: ${trip.maxParticipants}` : "No participant limit"}>
             <Users className="h-4 w-4" />
-            {trip.maxParticipants}
+            {capacity}
           </p>
           {trip.host && <p className="mt-1">Hosted by {trip.host.name}</p>}
         </div>

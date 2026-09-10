@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 import { Bird, Calendar, MapPin, MessageSquare, Navigation } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
@@ -30,6 +31,7 @@ type HotspotDetail = {
     meetingPoint: string;
     status: string;
     maxParticipants: number | null;
+    rsvpCount: number;
     host: { id: string; name: string; avatarUrl: string | null };
   }[];
   sightings: {
@@ -59,6 +61,7 @@ async function getHotspotDetail(id: string): Promise<HotspotDetail | null> {
       trips: {
         include: {
           host: { select: { id: true, name: true, avatarUrl: true } },
+          _count: { select: { rsvps: true } },
         },
         orderBy: { date: "asc" },
       },
@@ -116,6 +119,7 @@ async function getHotspotDetail(id: string): Promise<HotspotDetail | null> {
       meetingPoint: t.meetingPoint,
       status: t.status,
       maxParticipants: t.maxParticipants,
+      rsvpCount: t._count.rsvps,
       host: t.host,
     })),
     sightings: recentSightings.map((s) => ({
@@ -160,6 +164,13 @@ export default async function HotspotDetailPage({ params }: Props) {
     <div className="min-h-screen bg-sandstone dark:bg-forest text-forest dark:text-sandstone">
       <main className="mx-auto max-w-4xl px-4 py-8">
         <BackButton fallbackHref="/map" label="Back to map" />
+        <Link
+          href={`/map?hotspot=${hotspot.id}`}
+          className="ml-4 inline-flex items-center gap-1 text-sm font-medium text-teal-700 hover:underline dark:text-teal-300"
+        >
+          <Navigation className="h-4 w-4" />
+          View on map
+        </Link>
 
         <div className="mt-4 overflow-hidden rounded-2xl border border-sage/20 dark:border-sage/600 shadow-lg">
           {hotspot.coverImage ? (

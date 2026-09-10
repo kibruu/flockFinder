@@ -6,6 +6,8 @@ import { loadRecentSightings } from "@/lib/sightings";
 import { finalizeExpiredTrips } from "@/lib/trip-status";
 import type { Hotspot, Trip } from "@/components/MapView";
 
+type SearchParams = { [key: string]: string | string[] | undefined };
+
 async function getHotspots(): Promise<Hotspot[]> {
   return db.hotspot.findMany({
     select: {
@@ -98,7 +100,9 @@ export const metadata: Metadata = {
   description: "Explore birding hotspots, recent sightings, and upcoming expeditions on an interactive map.",
 };
 
-export default async function MapPage() {
+export default async function MapPage({ searchParams }: { searchParams: Promise<SearchParams> }) {
+  const params = await searchParams;
+  const focusHotspotId = typeof params.hotspot === "string" ? params.hotspot : null;
   const currentUserId = await getCurrentUserId();
   const [hotspots, sightings, trips] = await Promise.all([
     getHotspots(),
@@ -113,6 +117,7 @@ export default async function MapPage() {
         sightings={sightings}
         trips={trips}
         currentUserId={currentUserId}
+        focusHotspotId={focusHotspotId}
       />
     </div>
   );

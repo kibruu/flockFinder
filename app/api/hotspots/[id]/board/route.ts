@@ -114,3 +114,109 @@ export async function POST(
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }
+
+const MESSAGE_SELECT = {
+  id: true,
+  content: true,
+  createdAt: true,
+  editedAt: true,
+  deletedAt: true,
+  sender: { select: SENDER_SELECT },
+} as const;
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json().catch(() => null);
+    const { messageId, content } = body ?? {};
+    if (!messageId || !content) {
+      return NextResponse.json({ error: "messageId and content required" }, { status: 400 });
+    }
+
+    const normalized = normalizeMessageContent(content);
+    if (!normalized) {
+      return NextResponse.json({ error: "Message must be 1-2000 characters" }, { status: 400 });
+    }
+
+    const hotspot = await db.hotspot.findUnique({ where: { id }, select: { id: true } });
+    if (!hotspot) {
+      return NextResponse.json({ error: "Hotspot not found" }, { status: 404 });
+    }
+
+    const message = await db.chatMessage.findFirst({
+      where: { id: messageId, hotspotId: id },
+      select: { id: true, senderId: true, deletedAt: true },
+    });
+    if (!message) {
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    }
+    if (message.deletedAt) {
+      return NextResponse.json({ error: "Message is deleted" }, { status: 400 });
+    }
+    if (message.senderId !== session.id) {
+      return NextResponse.json({ error: "Can only edit your own messages" }, { status: 403 });
+    }
+
+    const updated = await db.chatMessage.update({
+      where: { id: messageId },
+      data: { content: normalized, editedAt: new Date() },
+      select: MESSAGE_SELECT,
+    });
+
+    return NextResponse.json({ message: serializeMessage(updated) });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id } = await params;
+    const body = await request.json().catch(() => null);
+    const { messageId } = body ?? {};
+    if (!messageId) {
+      return NextResponse.json({ error: "messageId required" }, { status: 400 });
+    }
+
+    const hotspot = await db.hotspot.findUnique({ where: { id }, select: { id: true } });
+    if (!hotspot) {
+      return NextResponse.json({ error: "Hotspot not found" }, { status: 404 });
+    }
+
+    const message = await db.chatMessage.findFirst({
+      where: { id: messageId, hotspotId: id },
+      select: { id: true, senderId: true },
+    });
+    if (!message) {
+      return NextResponse.json({ error: "Message not found" }, { status: 404 });
+    }
+    if (message.senderId !== session.id) {
+      return NextResponse.json({ error: "Can only delete your own messages" }, { status: 403 });
+    }
+
+    await db.chatMessage.update({
+      where: { id: messageId },
+      data: { deletedAt: new Date(), content: "" },
+    });
+
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
+  }
+}

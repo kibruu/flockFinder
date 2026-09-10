@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Loader2, Send, Users, Edit2, Trash2, Smile, Check, X } from "lucide-react";
 import { useLiveMessages } from "@/hooks/useLiveMessages";
 import { formatRelativeTime } from "@/lib/time";
@@ -38,14 +39,21 @@ export function MessageThread({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [atBottom, setAtBottom] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const isDm = url.includes("/api/messages/") && !url.includes("/chat") && !url.includes("/board");
 
+  const handleScroll = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setAtBottom(el.scrollHeight - el.scrollTop - el.clientHeight < 80);
+  };
+
   useEffect(() => {
     const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages]);
+    if (el && atBottom) el.scrollTop = el.scrollHeight;
+  }, [messages, atBottom]);
 
   useEffect(() => {
     if (isDm && enabled && currentUserId) {
@@ -145,7 +153,7 @@ export function MessageThread({
 
   return (
     <div className="flex flex-col relative">
-      <div ref={scrollRef} className={`${heightClass} space-y-3 overflow-y-auto pr-1`}>
+      <div ref={scrollRef} onScroll={handleScroll} className={`${heightClass} space-y-3 overflow-y-auto pr-1`}>
         {messages.length === 0 ? (
           <p className="mt-4 text-center text-sm text-gray-400 dark:text-gray-500">
             No messages yet.
@@ -185,7 +193,7 @@ export function MessageThread({
                       {message.sender.name}
                     </p>
                   )}
-                  {editingId === message.id && own && isDm ? (
+                  {editingId === message.id && own ? (
                     <div className="flex gap-2">
                       <input
                         type="text"
@@ -222,7 +230,7 @@ export function MessageThread({
                           {formatRelativeTime(message.createdAt)}
                           {message.editedAt && " (edited)"}
                         </p>
-                        {own && !isDeleted && isDm && (
+                        {own && !isDeleted && (
                           <div className="flex items-center gap-1 ml-auto">
                             <button
                               onClick={() => { setEditingId(message.id); setEditDraft(message.content); }}
@@ -250,7 +258,15 @@ export function MessageThread({
         )}
       </div>
 
-      <form onSubmit={handleSend} className="mt-3 flex gap-2 relative">
+      {!currentUserId ? (
+        <div className="mt-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white/60 dark:bg-gray-800/60 px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">
+          <Link href="/auth" className="font-medium text-teal-700 hover:underline dark:text-teal-300">
+            Sign in
+          </Link>{" "}
+          to join the conversation.
+        </div>
+      ) : (
+        <form onSubmit={handleSend} className="mt-3 flex gap-2 relative">
         <div className="flex-1 flex items-center gap-2 relative">
           <button
             type="button"
@@ -298,7 +314,8 @@ export function MessageThread({
             ))}
           </div>
         )}
-      </form>
+        </form>
+      )}
     </div>
   );
 }

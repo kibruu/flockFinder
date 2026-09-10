@@ -92,6 +92,7 @@ interface MapViewProps {
   sightings: Sighting[];
   trips: Trip[];
   currentUserId?: string;
+  focusHotspotId?: string | null;
 }
 
 // Color-blind safe palette (tested with Coblis simulator for protanopia/deuteranopia/tritanopia)
@@ -188,7 +189,7 @@ function HabitatLegend({ hotspots }: { hotspots: Hotspot[] }) {
   );
 }
 
-export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewProps) {
+export function MapView({ hotspots, sightings, trips, currentUserId, focusHotspotId }: MapViewProps) {
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef({
@@ -196,6 +197,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     sightings: L.featureGroup(),
     expeditions: L.featureGroup(),
   });
+  const hotspotMarkersRef = useRef(new Map<string, L.Marker>());
   const tileLayerRef = useRef<L.TileLayer | null>(null);
   const darkModeRef = useRef(document.documentElement.classList.contains("dark"));
   const [showLayers, setShowLayers] = useState({
@@ -363,11 +365,13 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
     isRebuildingRef.current = true;
     layersRef.current.hotspots.clearLayers();
+    hotspotMarkersRef.current.clear();
     if (showLayers.hotspots) {
       filteredHotspots.forEach((hotspot) => {
         const marker = L.marker([hotspot.latitude, hotspot.longitude], {
           icon: createCustomIcon(HABITAT_COLORS[hotspot.habitatType] || LAYER_COLORS.hotspots, "🦅"),
         });
+        hotspotMarkersRef.current.set(hotspot.id, marker);
         const name = escapeHtml(hotspot.name);
         const locationName = escapeHtml(hotspot.locationName);
         const habitatType = escapeHtml(hotspot.habitatType);
@@ -390,6 +394,19 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     }
     isRebuildingRef.current = false;
   }, [filteredHotspots, showLayers.hotspots, mapReady]);
+
+  useEffect(() => {
+    if (!mapReady || !focusHotspotId) return;
+    const map = mapInstanceRef.current;
+    if (!map) return;
+
+    const marker = hotspotMarkersRef.current.get(focusHotspotId);
+    if (!marker) return;
+
+    const latLng = marker.getLatLng();
+    map.setView(latLng, Math.max(map.getZoom(), 12), { animate: true });
+    marker.openPopup();
+  }, [mapReady, focusHotspotId, filteredHotspots, showLayers.hotspots]);
 
   useEffect(() => {
     if (!mapInstanceRef.current || !mapReady) return;
