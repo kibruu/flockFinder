@@ -7,6 +7,15 @@ import { useUnreadCount } from "@/hooks/useUnreadCount";
 import Image from "next/image";
 import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Zap, MessageSquare, Trees, Bird } from "lucide-react";
 
+// Logo colors - easily customizable
+const LOGO_BG_LIGHT = "bg-sage/20";
+const LOGO_BG_DARK = "dark:bg-sage/800";
+const LOGO_BG_HOVER_LIGHT = "hover:bg-teal-600";
+const LOGO_BG_HOVER_DARK = "dark:hover:bg-teal-500";
+const LOGO_BIRD_LIGHT = "text-teal-600";
+const LOGO_BIRD_DARK = "dark:text-sandstone";
+const LOGO_BIRD_HOVER = "group-hover:text-white";
+
 const NAV_ITEMS = [
   { href: "/trips", label: "Trips & Carpools", icon: LayoutDashboard },
   { href: "/map", label: "Field Map", icon: MapPin },
@@ -45,9 +54,13 @@ export function Navbar() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
 <div className="flex items-center gap-2">
-               <Bird className="h-8 w-8 text-amber" />
-               <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
-             </div>
+                <Link href="/" className="flex items-center gap-2 group" aria-label="FlockFinder home">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage/20 dark:bg-sage/800 hover:bg-teal-600 dark:hover:bg-teal-500 transition-colors">
+                    <Bird className="h-6 w-6 text-teal-600 dark:text-sandstone group-hover:text-white transition-colors" />
+                  </div>
+                </Link>
+                <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
+              </div>
             <div className="flex items-center gap-4">
               <div className="h-8 w-32 bg-sage/20 animate-pulse rounded dark:bg-sage/30" />
               <div className="h-8 w-24 bg-sage/20 animate-pulse rounded dark:bg-sage/30" />
@@ -217,10 +230,14 @@ export function Navbar() {
 
       <div className="border-t border-sage/20 dark:border-sage/20 bg-sandstone/95 dark:bg-forest/95 px-4 py-2">
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Zap className="h-5 w-5 text-amber" />
-            <span className="text-sm font-medium text-forest dark:text-sandstone">Quick Demo Switch:</span>
-          </div>
+<div className="flex items-center gap-2">
+               <Link href="/" className="flex items-center gap-2 group" aria-label="FlockFinder home">
+                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage/20 dark:bg-sage/800 hover:bg-teal-600 dark:hover:bg-teal-500 transition-colors">
+                   <Bird className="h-6 w-6 text-teal-600 dark:text-sandstone group-hover:text-white transition-colors" />
+                 </div>
+               </Link>
+               <span className="text-xl font-bold text-forest dark:text-sandstone">FlockFinder</span>
+             </div>
           <div className="flex items-center gap-2 flex-wrap">
             {demos.map((demo) => (
               <button
