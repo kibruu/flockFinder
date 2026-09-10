@@ -577,8 +577,8 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
               <Icon className={`h-4 w-4 ${color}`} />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{label}</span>
               <span className="text-xs text-gray-400">
-                {key === "hotspots" && hotspots.length}
-                {key === "sightings" && sightings.length}
+                {key === "hotspots" && filteredHotspots.length}
+                {key === "sightings" && filteredSightings.length}
                 {key === "expeditions" && trips.length}
               </span>
             </label>
@@ -590,7 +590,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">Habitat filter applies to sightings &amp; hotspots</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">Filters apply to sightings &amp; hotspots</p>
           </div>
           {hasActiveFilters && (
             <button
