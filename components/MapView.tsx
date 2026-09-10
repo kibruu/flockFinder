@@ -152,7 +152,7 @@ function HabitatLegend({ hotspots }: { hotspots: Hotspot[] }) {
             <div
               className="w-3 h-3 rounded-full border-2 border-white dark:border-gray-300 shadow-sm"
               style={{ backgroundColor: HABITAT_COLORS[habitat] || LAYER_COLORS.hotspots }}
-              aria-label={`${habitat} habitat`}
+              aria-hidden="true"
             />
             <span className="text-xs text-gray-700 dark:text-gray-300 capitalize">{habitat.toLowerCase()}</span>
           </div>
@@ -605,18 +605,20 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         </div>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Species <span className="text-gray-400 dark:text-gray-500 font-normal">(sightings)</span></label>
+            <label htmlFor="map-species-filter" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Species <span className="text-gray-400 dark:text-gray-500 font-normal">(sightings)</span></label>
             <input
+              id="map-species-filter"
               type="text"
               placeholder="Search species..."
               value={filters.species}
               onChange={(e) => setFilters((prev) => ({ ...prev, species: e.target.value }))}
-              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-teal-500"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Habitat</label>
+            <label htmlFor="map-habitat-filter" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Habitat</label>
             <select
+              id="map-habitat-filter"
               value={filters.habitat}
               onChange={(e) => setFilters((prev) => ({ ...prev, habitat: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
@@ -628,8 +630,9 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range <span className="text-gray-400 dark:text-gray-500 font-normal">(sightings)</span></label>
+            <label htmlFor="map-daterange-filter" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range <span className="text-gray-400 dark:text-gray-500 font-normal">(sightings)</span></label>
             <select
+              id="map-daterange-filter"
               value={filters.dateRange}
               onChange={(e) => setFilters((prev) => ({ ...prev, dateRange: e.target.value }))}
               className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500"
