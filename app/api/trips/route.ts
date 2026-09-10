@@ -41,6 +41,11 @@ export async function POST(request: NextRequest) {
       parsedMaxParticipants = n;
     }
 
+    const meetingDateTime = new Date(meetingTime);
+    if (meetingDateTime <= new Date()) {
+      return NextResponse.json({ error: "Meeting time must be in the future" }, { status: 400 });
+    }
+
     const hotspot = await db.hotspot.findUnique({ where: { id: hotspotId } });
     if (!hotspot) {
       return NextResponse.json({ error: "Hotspot not found" }, { status: 404 });

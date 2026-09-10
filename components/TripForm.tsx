@@ -38,6 +38,13 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
     return `${y}-${m}-${d}`;
   };
 
+  const localNowHM = () => {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, "0");
+    const m = String(now.getMinutes()).padStart(2, "0");
+    return `${h}:${m}`;
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -90,6 +97,13 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
     if (formData.maxParticipants) {
       const n = parseInt(formData.maxParticipants);
       if (isNaN(n) || n < 1 || n > 50) newErrors.maxParticipants = "Must be between 1 and 50";
+    }
+    // Combined date+time must be in the future
+    if (formData.date && formData.meetingTime) {
+      const meetingDateTime = new Date(`${formData.date}T${formData.meetingTime}:00`);
+      if (meetingDateTime <= new Date()) {
+        newErrors.meetingTime = "Meeting time must be in the future";
+      }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -274,6 +288,7 @@ export function TripForm({ hotspots, species, onClose, onCreated }: TripFormProp
                   type="time"
                   value={formData.meetingTime}
                   onChange={handleChange}
+                  min={formData.date === localToday() ? localNowHM() : undefined}
                   className={`w-full pl-9 pr-4 py-2.5 rounded-lg border bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-teal-500 ${errors.meetingTime ? "border-red-500" : "border-gray-300 dark:border-gray-600"}`}
                   disabled={loading}
                 />
