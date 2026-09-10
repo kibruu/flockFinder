@@ -20,11 +20,6 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 export const metadata: Metadata = {
   title: "FlockFinder — Birding Expeditions & Carpool Community",
   description: "Join birders for field trips, coordinate carpools to remote hotspots, log sightings, and build your Life List.",
-  icons: {
-    icon: "/icon.svg",
-    shortcut: "/icon.svg",
-    apple: "/icon.svg",
-  },
 };
 
 export const viewport: Viewport = {
