@@ -598,7 +598,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         <div className="flex items-center justify-between mb-3">
           <div>
             <h3 className="font-semibold text-gray-900 dark:text-white">Filters</h3>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400">Filters apply to sightings &amp; hotspots</p>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400">Filters apply to all visible layers</p>
           </div>
           {hasActiveFilters && (
             <button
@@ -611,7 +611,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         </div>
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Species</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Species <span className="text-gray-400 dark:text-gray-500 font-normal">(sightings)</span></label>
             <input
               type="text"
               placeholder="Search species..."
@@ -634,7 +634,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
             </select>
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range</label>
+            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range <span className="text-gray-400 dark:text-gray-500 font-normal">(sightings)</span></label>
             <select
               value={filters.dateRange}
               onChange={(e) => setFilters((prev) => ({ ...prev, dateRange: e.target.value }))}
@@ -675,9 +675,14 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
       <HabitatLegend hotspots={hotspots} />
 
-      {!filteredSightings.length && showLayers.sightings && (
+      {hasActiveFilters && !filteredHotspots.length && showLayers.hotspots && !filteredSightings.length && showLayers.sightings && !filteredTrips.length && showLayers.expeditions && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[800] bg-amber-50 dark:bg-amber-900/90 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg shadow-lg text-sm text-center animate-slide-up">
-          No sightings found matching current filters.
+          No results match current filters. <button onClick={clearFilters} className="underline font-medium">Clear filters</button>
+        </div>
+      )}
+      {!hasActiveFilters && !filteredSightings.length && showLayers.sightings && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-[800] bg-amber-50 dark:bg-amber-900/90 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 px-4 py-2 rounded-lg shadow-lg text-sm text-center animate-slide-up">
+          No sightings recorded yet.
         </div>
       )}
     </div>
