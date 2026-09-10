@@ -109,3 +109,25 @@ body {
   background: #1e2d26;
   color: #e5e7eb;
 }
+
+.marker-cluster div {
+  color: #ffffff;
+}
+.marker-cluster-small {
+  background-color: rgba(47, 125, 74, 0.5);
+}
+.marker-cluster-small div {
+  background-color: #2f7d4a;
+}
+.marker-cluster-medium {
+  background-color: rgba(180, 83, 9, 0.5);
+}
+.marker-cluster-medium div {
+  background-color: #b45309;
+}
+.marker-cluster-large {
+  background-color: rgba(154, 58, 27, 0.5);
+}
+.marker-cluster-large div {
+  background-color: #9a3a1b;
+}

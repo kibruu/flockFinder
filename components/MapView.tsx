@@ -15,6 +15,30 @@ function escapeHtml(str: string): string {
     .replace(/'/g, "&#39;");
 }
 
+function channel(c: number): number {
+  return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+}
+
+function relativeLuminance(hex: string): number {
+  const full = hex.replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
+  return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function contrastBetween(hexA: string, hexB: string): number {
+  const la = relativeLuminance(hexA);
+  const lb = relativeLuminance(hexB);
+  const [hi, lo] = la > lb ? [la, lb] : [lb, la];
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+// Pick black or white so the glyph meets WCAG AA (>= 4.5:1) on the pin background
+function bestTextColor(bgHex: string): string {
+  const white = "#ffffff";
+  const black = "#000000";
+  return contrastBetween(bgHex, white) >= contrastBetween(bgHex, black) ? white : black;
+}
+
 export interface Hotspot {
   id: string;
   name: string;
@@ -88,6 +112,7 @@ const LAYER_COLORS = {
 };
 
 function createCustomIcon(color: string, emoji: string, size = 32) {
+  const textColor = bestTextColor(color);
   return L.divIcon({
     className: "custom-marker",
     html: `
@@ -104,7 +129,7 @@ function createCustomIcon(color: string, emoji: string, size = 32) {
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         border: 3px solid white;
       ">
-        <span style="transform: rotate(45deg); display: block;">${emoji}</span>
+        <span style="transform: rotate(45deg); display: block; color: ${textColor};">${emoji}</span>
       </div>
     `,
     iconSize: [size, size],
@@ -114,6 +139,7 @@ function createCustomIcon(color: string, emoji: string, size = 32) {
 }
 
 function createUserSightingIcon(size = 32) {
+  const textColor = bestTextColor("#f59e0b");
   return L.divIcon({
     className: "custom-marker user-sighting",
     html: `
@@ -130,7 +156,7 @@ function createUserSightingIcon(size = 32) {
         box-shadow: 0 2px 8px rgba(0,0,0,0.3);
         border: 3px solid #fde047;
       ">
-        <span style="transform: rotate(45deg); display: block;">📍</span>
+        <span style="transform: rotate(45deg); display: block; color: ${textColor};">📍</span>
       </div>
     `,
     iconSize: [size, size],
@@ -605,7 +631,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
         </div>
         <div className="space-y-3">
           <div>
-            <label htmlFor="map-species-filter" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Species <span className="text-gray-400 dark:text-gray-500 font-normal">(sightings)</span></label>
+            <label htmlFor="map-species-filter" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Species <span className="text-gray-600 dark:text-gray-400 font-normal">(sightings)</span></label>
             <input
               id="map-species-filter"
               type="text"
@@ -630,7 +656,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
             </select>
           </div>
           <div>
-            <label htmlFor="map-daterange-filter" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range <span className="text-gray-400 dark:text-gray-500 font-normal">(sightings)</span></label>
+            <label htmlFor="map-daterange-filter" className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Time Range <span className="text-gray-600 dark:text-gray-400 font-normal">(sightings)</span></label>
             <select
               id="map-daterange-filter"
               value={filters.dateRange}
