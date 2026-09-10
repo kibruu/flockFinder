@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import * as L from "leaflet";
-import { ensureMarkerCluster, createClusterLayer } from "@/lib/leafletWithCluster";
+import { ensureMarkerCluster } from "@/lib/leafletWithCluster";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { MapPin, Bird, Flag, Navigation, Layers, Crosshair, ArrowLeft } from "lucide-react";
 
@@ -139,33 +139,6 @@ function createUserSightingIcon(size = 32) {
   });
 }
 
-function createClusterIcon(count: number, color: string) {
-  const size = count < 10 ? 30 : count < 100 ? 36 : 42;
-  return L.divIcon({
-    className: "marker-cluster",
-    html: `
-      <div style="
-        width: ${size}px;
-        height: ${size}px;
-        border-radius: 50%;
-        background: ${color};
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-weight: bold;
-        font-size: ${size * 0.4}px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-        border: 3px solid white;
-      ">
-        ${count}
-      </div>
-    `,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-  });
-}
-
 function HabitatLegend({ hotspots }: { hotspots: Hotspot[] }) {
   const habitatTypes = [...new Set(hotspots.map((h) => h.habitatType))].sort();
   if (!habitatTypes.length) return null;
@@ -194,7 +167,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
   const mapInstanceRef = useRef<L.Map | null>(null);
   const layersRef = useRef({
     hotspots: L.featureGroup(),
-    sightings: null as L.MarkerClusterGroup | null,
+    sightings: L.featureGroup(),
     expeditions: L.featureGroup(),
   });
   const tileLayerRef = useRef<L.TileLayer | null>(null);
@@ -296,15 +269,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
     void ensureMarkerCluster().then(() => {
       const currentMap = mapInstanceRef.current;
-      if (!currentMap || layersRef.current.sightings) return;
-
-      layersRef.current.sightings = createClusterLayer({
-        iconCreateFunction: (cluster) => createClusterIcon(cluster.getChildCount(), LAYER_COLORS.sightings),
-        spiderfyOnEveryZoom: true,
-        showCoverageOnHover: false,
-        zoomToBoundsOnClick: false,
-        maxClusterRadius: 50,
-      });
+      if (!currentMap) return;
 
       Object.values(layersRef.current).forEach((layer) => {
         if (layer) layer.addTo(currentMap);
@@ -346,7 +311,6 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
       map.remove();
       mapInstanceRef.current = null;
       tileLayerRef.current = null;
-      layersRef.current.sightings = null;
     };
   }, [updateTileLayer]);
 
@@ -406,18 +370,33 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
 
     isRebuildingRef.current = true;
     const sightingsLayer = layersRef.current.sightings;
-    if (!sightingsLayer) return;
     sightingsLayer.clearLayers();
 
-    if (!showLayers.sightings) return;
+    if (!showLayers.sightings) {
+      isRebuildingRef.current = false;
+      return;
+    }
 
-    filteredSightings.forEach((sighting) => {
-      const isUser = sighting.isCurrentUser;
-      const marker = L.marker([sighting.latitude, sighting.longitude], {
-        icon: isUser ? createUserSightingIcon() : createCustomIcon(LAYER_COLORS.sightings, "📍"),
-      });
-      marker.options.title = sighting.speciesName;
-      const speciesName = escapeHtml(sighting.speciesName);
+    const coordGroups = new Map<string, Sighting[]>();
+    filteredSightings.forEach((s) => {
+      const key = `${s.latitude.toFixed(6)},${s.longitude.toFixed(6)}`;
+      const arr = coordGroups.get(key) ?? [];
+      arr.push(s);
+      coordGroups.set(key, arr);
+    });
+
+    coordGroups.forEach((group) => {
+      const spreadRadius = group.length > 1 ? 0.0012 : 0;
+      group.forEach((sighting, i) => {
+        const angle = (2 * Math.PI * i) / group.length;
+        const lat = sighting.latitude + spreadRadius * Math.sin(angle);
+        const lng = sighting.longitude + spreadRadius * Math.cos(angle);
+        const isUser = sighting.isCurrentUser;
+        const marker = L.marker([lat, lng], {
+          icon: isUser ? createUserSightingIcon() : createCustomIcon(LAYER_COLORS.sightings, "📍"),
+        });
+        marker.options.title = sighting.speciesName;
+        const speciesName = escapeHtml(sighting.speciesName);
         const sciName = escapeHtml(sighting.speciesScientificName);
         const userName = escapeHtml(sighting.userName);
         const hotspotName = escapeHtml(sighting.hotspotName);
@@ -438,8 +417,9 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
           ${notes ? `<p style="margin: 8px 0 0; color: #4a4a4a; font-size: 0.8rem; font-style: italic;">"${notes}"</p>` : ""}
         </div>
       `;
-      marker.bindPopup(popupContent, { maxWidth: 300 });
-      marker.addTo(sightingsLayer);
+        marker.bindPopup(popupContent, { maxWidth: 300 });
+        marker.addTo(sightingsLayer);
+      });
     });
     isRebuildingRef.current = false;
   }, [filteredSightings, showLayers.sightings, mapReady]);
@@ -486,7 +466,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     const map = mapInstanceRef.current;
     const target = activePopupRef.current;
     if (!target) return;
-    let layer: L.FeatureGroup | L.MarkerClusterGroup | null = null;
+    let layer: L.FeatureGroup | null = null;
     if (target.layer === "hotspots") layer = layersRef.current.hotspots;
     else if (target.layer === "sightings") layer = layersRef.current.sightings;
     else if (target.layer === "expeditions") layer = layersRef.current.expeditions;
