@@ -367,7 +367,7 @@ export function MapView({ hotspots, sightings, trips, currentUserId }: MapViewPr
     if (showLayers.hotspots) {
       filteredHotspots.forEach((hotspot) => {
         const marker = L.marker([hotspot.latitude, hotspot.longitude], {
-          icon: createCustomIcon(LAYER_COLORS.hotspots, "🦅"),
+          icon: createCustomIcon(HABITAT_COLORS[hotspot.habitatType] || LAYER_COLORS.hotspots, "🦅"),
         });
         const name = escapeHtml(hotspot.name);
         const locationName = escapeHtml(hotspot.locationName);
