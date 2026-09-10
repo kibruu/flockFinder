@@ -33,13 +33,14 @@ export function MessageThread({
   heightClass = "h-[320px]",
   placeholder = "Type a message...",
 }: MessageThreadProps) {
-  const { messages, append, setMessages } = useLiveMessages(url, enabled);
+  const { messages, setMessages } = useLiveMessages(url, enabled);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editDraft, setEditDraft] = useState("");
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [atBottom, setAtBottom] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const emojiPickerRef = useRef<HTMLDivElement>(null);
   const isDm = url.includes("/api/messages/") && !url.includes("/chat") && !url.includes("/board");
@@ -65,7 +66,21 @@ export function MessageThread({
   const handleSend = async (event: FormEvent) => {
     event.preventDefault();
     const content = draft.trim();
-    if (!content || !currentUserId || sending) return;
+    if (!content || !currentUserId || sending || editingId !== null) return;
+
+    const tempId = `temp-${Date.now()}`;
+    const temp: MessageRecord = {
+      id: tempId,
+      content,
+      createdAt: new Date().toISOString(),
+      editedAt: null,
+      deletedAt: null,
+      sender: { id: currentUserId, name: "You", avatarUrl: null },
+    };
+
+    setMessages((prev) => [...prev, temp]);
+    setDraft("");
+    setErrorMsg(null);
     setSending(true);
     try {
       const res = await fetch(url, {
@@ -75,14 +90,17 @@ export function MessageThread({
       });
       if (res.ok) {
         const data = await res.json();
-        append(data.message as MessageRecord);
-        setDraft("");
+        setMessages((prev) =>
+          prev.map((m) => (m.id === tempId ? (data.message as MessageRecord) : m))
+        );
       } else {
-        const err = await res.json();
-        alert(err.error || "Failed to send message");
+        const err = await res.json().catch(() => null);
+        setErrorMsg(err?.error || "Failed to send message");
+        setMessages((prev) => prev.filter((m) => m.id !== tempId));
       }
     } catch {
-      alert("Failed to send message");
+      setErrorMsg("Failed to send message");
+      setMessages((prev) => prev.filter((m) => m.id !== tempId));
     } finally {
       setSending(false);
     }
@@ -90,6 +108,7 @@ export function MessageThread({
 
   const handleEdit = async (message: MessageRecord) => {
     if (!editDraft.trim()) return;
+    setErrorMsg(null);
     try {
       const res = await fetch(url, {
         method: "PATCH",
@@ -102,11 +121,11 @@ export function MessageThread({
           prev.map((m) => (m.id === message.id ? data.message : m))
         );
       } else {
-        const err = await res.json();
-        alert(err.error || "Failed to edit message");
+        const err = await res.json().catch(() => null);
+        setErrorMsg(err?.error || "Failed to edit message");
       }
     } catch {
-      alert("Failed to edit message");
+      setErrorMsg("Failed to edit message");
     }
     setEditingId(null);
     setEditDraft("");
@@ -114,6 +133,7 @@ export function MessageThread({
 
   const handleDelete = async (message: MessageRecord) => {
     if (!confirm("Delete this message?")) return;
+    setErrorMsg(null);
     try {
       const res = await fetch(url, {
         method: "DELETE",
@@ -127,11 +147,11 @@ export function MessageThread({
           )
         );
       } else {
-        const err = await res.json();
-        alert(err.error || "Failed to delete message");
+        const err = await res.json().catch(() => null);
+        setErrorMsg(err?.error || "Failed to delete message");
       }
     } catch {
-      alert("Failed to delete message");
+      setErrorMsg("Failed to delete message");
     }
   };
 
@@ -257,6 +277,12 @@ export function MessageThread({
           })
         )}
       </div>
+
+      {errorMsg && (
+        <p role="alert" className="mt-2 text-sm text-red-600 dark:text-red-400">
+          {errorMsg}
+        </p>
+      )}
 
       {!currentUserId ? (
         <div className="mt-3 rounded-lg border border-gray-200 dark:border-gray-600 bg-white/60 dark:bg-gray-800/60 px-4 py-3 text-center text-sm text-gray-600 dark:text-gray-300">

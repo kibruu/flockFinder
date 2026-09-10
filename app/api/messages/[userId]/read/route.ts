@@ -24,24 +24,7 @@ export async function POST(
       update: { lastReadAt: new Date(), updatedAt: new Date() },
     });
 
-    // Mark all unread messages from this peer as read
-    const unreadMessages = await db.chatMessage.findMany({
-      where: {
-        senderId: userId,
-        recipientId: session.id,
-        deletedAt: null,
-        reads: { none: { userId: session.id } },
-      },
-      select: { id: true },
-    });
-
-    if (unreadMessages.length > 0) {
-      await db.messageRead.createMany({
-        data: unreadMessages.map((m) => ({ messageId: m.id, userId: session.id })),
-      });
-    }
-
-    return NextResponse.json({ success: true, markedCount: unreadMessages.length });
+    return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }

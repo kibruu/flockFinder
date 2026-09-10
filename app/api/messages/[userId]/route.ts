@@ -120,7 +120,7 @@ export async function POST(
     }
 
     const created = await db.chatMessage.create({
-      data: { senderId: session.id, recipientId: userId, content },
+      data: { senderId: session.id, recipientId: userId, content, messageType: "DIRECT" },
       select: {
         id: true,
         content: true,

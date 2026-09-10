@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useSession, useDemoSwitch } from "@/hooks/useAuth";
+import { useUnreadCount } from "@/hooks/useUnreadCount";
 import Image from "next/image";
 import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Zap, MessageSquare, Trees } from "lucide-react";
 
@@ -17,6 +18,7 @@ const NAV_ITEMS = [
 export function Navbar() {
   const { user, loading } = useSession();
   const { switchDemo, demos, switching } = useDemoSwitch();
+  const unreadMessages = useUnreadCount(Boolean(user?.id));
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -72,10 +74,15 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className="flex items-center gap-2 text-sm font-medium text-forest-deep hover:text-forest dark:text-sandstone dark:hover:text-white transition-colors"
+                className="relative flex items-center gap-2 text-sm font-medium text-forest-deep hover:text-forest dark:text-sandstone dark:hover:text-white transition-colors"
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
+                {item.href === "/messages" && unreadMessages > 0 && (
+                  <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-teal-600 px-1 text-[10px] font-semibold text-sandstone">
+                    {unreadMessages > 99 ? "99+" : unreadMessages}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
@@ -178,6 +185,11 @@ export function Navbar() {
                 >
                   <item.icon className="h-5 w-5" />
                   {item.label}
+                  {item.href === "/messages" && unreadMessages > 0 && (
+                    <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 px-1.5 text-[10px] font-semibold text-sandstone">
+                      {unreadMessages > 99 ? "99+" : unreadMessages}
+                    </span>
+                  )}
                 </Link>
               ))}
               {!user && (

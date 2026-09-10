@@ -27,7 +27,6 @@ model User {
   sightings           Sighting[]
   sentMessages        ChatMessage[]      @relation("MessageSender")
   receivedMessages    ChatMessage[]      @relation("MessageRecipient")
-  messageReads        MessageRead[]
   conversations       Conversation[]     @relation("ConversationUser")
   peerConversations   Conversation[]     @relation("ConversationPeer")
   sessions            Session[]
@@ -181,7 +180,6 @@ model ChatMessage {
   trip       Trip?    @relation(fields: [tripId], references: [id])
   hotspot    Hotspot? @relation(fields: [hotspotId], references: [id])
   recipient  User?    @relation("MessageRecipient", fields: [recipientId], references: [id])
-  reads      MessageRead[]
 
   @@index([tripId, createdAt])
   @@index([hotspotId, createdAt])
@@ -203,17 +201,4 @@ model Conversation {
 
   @@unique([userId, peerId])
   @@index([userId, updatedAt])
-}
-
-model MessageRead {
-  id        String   @id @default(cuid())
-  messageId String
-  userId    String
-  readAt    DateTime @default(now())
-
-  message ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
-  user    User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([messageId, userId])
-  @@index([userId, readAt])
 }

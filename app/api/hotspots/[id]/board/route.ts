@@ -98,7 +98,7 @@ export async function POST(
     }
 
     const created = await db.chatMessage.create({
-      data: { senderId: session.id, hotspotId: id, content },
+      data: { senderId: session.id, hotspotId: id, content, messageType: "BOARD" },
       select: {
         id: true,
         content: true,
