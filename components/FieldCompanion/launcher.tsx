@@ -168,7 +168,7 @@ export function FieldCompanionLauncher({ children }: { children: React.ReactNode
         </>
       )}
 
-      {open && (
+      {open && user && (
         <FieldCompanion
           species={species}
           hotspots={hotspots}
