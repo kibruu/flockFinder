@@ -28,11 +28,11 @@ export function TripCard({ trip }: TripCardProps) {
   return (
     <Link
       href={`/trips/${trip.id}`}
-      className="block rounded-xl border border-sage/20 dark:border-sage/600 p-4 bg-sandstone dark:bg-forest shadow-sm hover:border-sage/40 dark:hover:border-sage/400 transition-colors"
+      className="block rounded-xl border border-sage/20 p-4 bg-sandstone dark:bg-forest-deep shadow-sm hover:border-sage/40 transition-colors"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h3 className="font-semibold text-lg">{trip.title}</h3>
+          <h3 className="font-semibold text-lg text-forest-deep dark:text-sandstone">{trip.title}</h3>
           <p className="mt-1 text-sm text-forest/60 dark:text-sandstone/60">
             <LocalDateOnly dateString={trip.date} />
           </p>

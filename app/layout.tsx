@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
+import { Footer } from "@/components/Footer";
 import { AuthProvider } from "@/hooks/useAuth";
 import { FieldCompanionLauncher } from "@/components/FieldCompanion/launcher";
 
@@ -42,6 +43,7 @@ export default function RootLayout({
           <FieldCompanionLauncher>
             <Navbar />
             <main className="flex-1">{children}</main>
+            <Footer />
           </FieldCompanionLauncher>
         </AuthProvider>
       </body>

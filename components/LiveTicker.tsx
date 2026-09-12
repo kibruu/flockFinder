@@ -55,15 +55,15 @@ export function LiveTicker({ initial }: { initial: TickerItem[] }) {
 
   if (items.length === 0) {
     return (
-      <p className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+      <p className="rounded-xl border border-dashed border-sage/30 p-8 text-center text-sm text-forest-mid dark:text-sandstone/50">
         No sightings logged yet.
       </p>
     );
   }
 
   return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-sm">
-      <ul className="divide-y divide-gray-100 dark:divide-gray-700">
+    <div className="overflow-hidden rounded-xl border border-sage/20 bg-sandstone dark:bg-forest-deep shadow-sm">
+      <ul className="divide-y divide-sage/20">
         {items.map((item) => (
           <li key={item.id} className="flex items-center gap-4 px-5 py-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-sage/20">
@@ -80,14 +80,14 @@ export function LiveTicker({ initial }: { initial: TickerItem[] }) {
               )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-medium text-gray-900 dark:text-white">
+              <p className="truncate text-sm font-medium text-forest-deep dark:text-sandstone">
                 {item.species.commonName}
               </p>
-              <p className="truncate text-xs text-gray-500 dark:text-gray-400">
+              <p className="truncate text-xs text-forest-mid dark:text-sandstone/50">
                 {item.user.name} at {item.hotspot.name}
               </p>
             </div>
-            <span className="shrink-0 text-xs text-gray-500 dark:text-gray-400">
+            <span className="shrink-0 text-xs text-forest-mid dark:text-sandstone/50">
               <LocalDate dateString={item.spottedAt} formatStr="MMM d, h:mm a" />
             </span>
           </li>

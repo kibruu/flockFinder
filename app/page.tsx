@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { TripCard } from "@/components/TripCard";
 import { LiveTicker } from "@/components/LiveTicker";
+import { HeroSceneSelector } from "@/components/hero-scene-selector";
 import type { TripListItem } from "@/types/trip";
 import { parseTripStatus } from "@/types/domain";
 import { finalizeExpiredTrips } from "@/lib/trip-status";
@@ -159,8 +160,14 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-sandstone dark:bg-forest">
-      <section className="bg-gradient-to-br from-forest via-teal/85 to-sage/70 dark:from-gray-950 dark:via-forest dark:to-teal/30">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:py-20">
+      <section className="relative overflow-hidden bg-sandstone dark:bg-forest-deep">
+        <HeroSceneSelector />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/50 via-black/20 to-transparent"
+        />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-sandstone to-transparent dark:from-forest dark:to-transparent" />
+        <div className="relative z-10 mx-auto max-w-7xl px-4 py-16 sm:py-20">
           <div className="max-w-2xl">
             <h1 className="text-4xl font-bold text-sandstone sm:text-5xl">
               Join the Flock
@@ -194,14 +201,14 @@ export default async function HomePage() {
           {statCards.map(({ label, value, icon: Icon }) => (
             <div
               key={label}
-              className="flex items-center gap-4 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm"
+              className="flex items-center gap-4 rounded-xl border border-sage/20 bg-sandstone dark:bg-forest-deep p-5 shadow-sm"
             >
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal-600/15 text-teal-600 dark:bg-teal-500/20 dark:text-teal-400">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-teal/15 text-teal dark:bg-teal/20 dark:text-teal">
                 <Icon className="h-6 w-6" aria-hidden="true" />
               </div>
               <div className="flex flex-col">
-                <dt className="order-2 text-sm text-gray-500 dark:text-gray-400">{label}</dt>
-                <dd className="order-1 text-2xl font-bold text-gray-900 dark:text-white">{value}</dd>
+                <dt className="order-2 text-sm text-forest-mid dark:text-sandstone/60">{label}</dt>
+                <dd className="order-1 text-2xl font-bold text-forest-deep dark:text-sandstone">{value}</dd>
               </div>
             </div>
           ))}
@@ -212,23 +219,23 @@ export default async function HomePage() {
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Link
             href="/trips"
-            className="group flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm transition-colors hover:border-teal-500/50"
+            className="group flex items-center justify-between rounded-xl border border-sage/20 bg-sandstone dark:bg-forest-deep p-5 shadow-sm transition-colors hover:border-teal/50"
           >
             <div className="flex items-center gap-3">
-              <PlusCircle className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-              <span className="font-medium text-gray-900 dark:text-white">Host an Outing</span>
+              <PlusCircle className="h-5 w-5 text-teal" />
+              <span className="font-medium text-forest-deep dark:text-sandstone">Host an Outing</span>
             </div>
             <ArrowRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-1" />
           </Link>
           <Link
             href="/trips?hasOpenSeats=true"
-            className="group flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm transition-colors hover:border-teal-500/50"
+            className="group flex items-center justify-between rounded-xl border border-sage/20 bg-sandstone dark:bg-forest-deep p-5 shadow-sm transition-colors hover:border-teal/50"
           >
             <div className="flex items-center gap-3">
-              <Car className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-              <span className="font-medium text-gray-900 dark:text-white">Find a Ride</span>
+              <Car className="h-5 w-5 text-teal" />
+              <span className="font-medium text-forest-deep dark:text-sandstone">Find a Ride</span>
             </div>
-            <ArrowRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-4 w-4 text-forest-mid dark:text-sandstone/40 transition-transform group-hover:translate-x-1" />
           </Link>
           <Link
             href="/map"
@@ -236,9 +243,9 @@ export default async function HomePage() {
           >
             <div className="flex items-center gap-3">
               <Compass className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-              <span className="font-medium text-gray-900 dark:text-white">Explore the Field Map</span>
+              <span className="font-medium text-forest-deep dark:text-sandstone">Explore the Field Map</span>
             </div>
-            <ArrowRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-1" />
+            <ArrowRight className="h-4 w-4 text-forest-mid dark:text-sandstone/40 transition-transform group-hover:translate-x-1" />
           </Link>
         </div>
       </section>
@@ -247,7 +254,7 @@ export default async function HomePage() {
         <div className="mb-5 flex items-end justify-between">
           <div>
             <h2 className="text-xl font-bold text-forest dark:text-sandstone">Upcoming Expeditions</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Adventures on the horizon</p>
+            <p className="text-sm text-forest-mid dark:text-sandstone/50">Adventures on the horizon</p>
           </div>
           <Link href="/trips" className="inline-flex items-center gap-1 text-sm font-medium text-teal-600 hover:underline dark:text-teal-400">
             View all
@@ -255,7 +262,7 @@ export default async function HomePage() {
           </Link>
         </div>
         {trips.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-gray-300 dark:border-gray-700 p-8 text-center text-sm text-gray-500 dark:text-gray-400">
+          <p className="rounded-xl border border-dashed border-sage/30 p-8 text-center text-sm text-forest-mid dark:text-sandstone/50">
             No upcoming expeditions yet — be the first to host one!
           </p>
         ) : (
@@ -271,7 +278,7 @@ export default async function HomePage() {
         <div className="mb-5 flex items-end justify-between">
           <div>
             <h2 className="text-xl font-bold text-forest dark:text-sandstone">Live Sighting Ticker</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Latest birds spotted by members</p>
+            <p className="text-sm text-forest-mid dark:text-sandstone/50">Latest birds spotted by members</p>
           </div>
           <Link href="/map" className="inline-flex items-center gap-1 text-sm font-medium text-teal-600 hover:underline dark:text-teal-400">
             On the map

@@ -9,7 +9,7 @@ import { Menu, X, Sun, Moon, User, LogOut, LayoutDashboard, MapPin, BookOpen, Me
 
 // Logo colors - easily customizable
 const LOGO_BG_LIGHT = "bg-sage/20";
-const LOGO_BG_DARK = "dark:bg-sage/800";
+const LOGO_BG_DARK = "dark:bg-sage/20";
 const LOGO_BG_HOVER_LIGHT = "hover:bg-teal-600";
 const LOGO_BG_HOVER_DARK = "dark:hover:bg-teal-500";
 const LOGO_BIRD_LIGHT = "text-teal-600";
@@ -105,7 +105,7 @@ export function Navbar() {
           <div className="flex items-center gap-4">
             <button
               onClick={toggleDarkMode}
-              className="p-2 rounded-lg text-forest-deep hover:bg-sage/20 dark:text-sandstone dark:hover:bg-sage/800 transition-colors"
+              className="p-2 rounded-lg text-forest-deep hover:bg-sage/20 dark:text-sandstone dark:hover:bg-sage/30 transition-colors"
               aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
               suppressHydrationWarning
             >
@@ -116,7 +116,7 @@ export function Navbar() {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 p-1 rounded-lg hover:bg-sage/20 dark:hover:bg-sage/800 transition-colors"
+                  className="flex items-center gap-2 p-1 rounded-lg hover:bg-sage/20 dark:hover:bg-sage/30 transition-colors"
                 >
                   {user.avatarUrl ? (
                     <Image
@@ -140,7 +140,7 @@ export function Navbar() {
                     </div>
                     <Link
                       href="/profile"
-                      className="flex items-center gap-2 px-4 py-2 text-sm text-forest-deep hover:bg-sage/100 dark:text-sandstone dark:hover:bg-sage/800"
+                      className="flex items-center gap-2 px-4 py-2 text-sm text-forest-deep hover:bg-sage/10 dark:text-sandstone dark:hover:bg-sage/20"
                       onClick={() => setUserMenuOpen(false)}
                     >
                       <User className="h-4 w-4" />
@@ -151,7 +151,7 @@ export function Navbar() {
                         const res = await fetch("/api/auth/logout", { method: "POST" });
                         if (res.ok) window.location.href = "/";
                       }}
-                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-forest-deep hover:bg-sage/100 dark:text-sandstone dark:hover:bg-sage/800"
+                      className="flex items-center gap-2 w-full px-4 py-2 text-sm text-forest-deep hover:bg-sage/10 dark:text-sandstone dark:hover:bg-sage/20"
                     >
                       <LogOut className="h-4 w-4" />
                       Sign out
@@ -178,7 +178,7 @@ export function Navbar() {
 
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg text-forest-deep hover:bg-sage/20 dark:text-sandstone dark:hover:bg-sage/800"
+              className="md:hidden p-2 rounded-lg text-forest-deep hover:bg-sage/20 dark:text-sandstone dark:hover:bg-sage/30"
               aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={mobileMenuOpen}
               aria-controls="mobile-navigation"
@@ -195,7 +195,7 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className="flex items-center gap-3 px-3 py-2 text-forest-deep hover:bg-sage/100 dark:text-sandstone dark:hover:bg-sage/800 rounded-lg"
+                  className="flex items-center gap-3 px-3 py-2 text-forest-deep hover:bg-sage/10 dark:text-sandstone dark:hover:bg-sage/20 rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   <item.icon className="h-5 w-5" />
@@ -234,7 +234,7 @@ export function Navbar() {
         <div className="mx-auto max-w-7xl flex items-center justify-between gap-4 flex-wrap">
 <div className="flex items-center gap-2">
                <Link href="/" className="flex items-center gap-2 group" aria-label="FlockFinder home">
-                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage/20 dark:bg-sage/800 hover:bg-teal-600 dark:hover:bg-teal-500 transition-colors">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-sage/20 dark:bg-sage/20 hover:bg-teal-600 dark:hover:bg-teal-500 transition-colors">
                    <Bird className="h-6 w-6 text-teal-600 dark:text-sandstone group-hover:text-white transition-colors" />
                  </div>
                </Link>
