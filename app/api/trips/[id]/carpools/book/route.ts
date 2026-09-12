@@ -56,6 +56,10 @@ export async function POST(
           where: { tripId_userId: { tripId: id, userId: session.id } },
         });
 
+        if (existingRsvp?.role === "DRIVER") {
+          throw new Error("Already driving");
+        }
+
         if (!existingRsvp && trip.maxParticipants) {
           const participantCount = await tx.tripRsvp.count({ where: { tripId: id } });
           if (participantCount >= trip.maxParticipants) {
@@ -88,6 +92,9 @@ export async function POST(
       }
       if (message === "No seats available") {
         return NextResponse.json({ error: "No seats available" }, { status: 400 });
+      }
+      if (message === "Already driving") {
+        return NextResponse.json({ error: "Already driving on this trip" }, { status: 400 });
       }
       throw error;
     }

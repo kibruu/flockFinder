@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
+﻿import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowLeft, Inbox, Users } from "lucide-react";
 import { getSession } from "@/lib/auth";
-import { getConversations } from "@/lib/conversations";
+import { getConversations, type ConversationSummary } from "@/lib/conversations";
 import { formatRelativeTime } from "@/lib/time";
 
 export const metadata: Metadata = {
-  title: "Messages — FlockFinder",
+  title: "Messages â€” FlockFinder",
   description: "Direct messages with fellow birders.",
 };
 
@@ -18,7 +18,10 @@ export default async function MessagesPage() {
     redirect("/auth");
   }
 
-  const conversations = (await getConversations(session.id)).filter((c) => c.user !== null);
+  const conversations = (await getConversations(session.id)).filter(
+    (c): c is ConversationSummary & { user: NonNullable<ConversationSummary["user"]> } =>
+      c.user !== null
+  );
 
   return (
     <div className="min-h-screen bg-sandstone dark:bg-forest text-forest dark:text-sandstone">
@@ -43,15 +46,15 @@ export default async function MessagesPage() {
         ) : (
           <ul className="mt-6 space-y-2">
             {conversations.map((conversation) => (
-              <li key={conversation.user!.id}>
+              <li key={conversation.user.id}>
                 <Link
-                  href={`/messages/${conversation.user!.id}`}
+                  href={`/messages/${conversation.user.id}`}
                   className="flex items-center gap-3 rounded-xl border border-sage/20 dark:border-sage/600 p-3 bg-sandstone dark:bg-forest shadow-sm hover:border-sage/40 dark:hover:border-sage/400 transition-colors"
                 >
-                  {conversation.user!.avatarUrl ? (
+                  {conversation.user.avatarUrl ? (
                     <Image
-                      src={conversation.user!.avatarUrl}
-                      alt={conversation.user!.name}
+                      src={conversation.user.avatarUrl}
+                      alt={conversation.user.name}
                       width={44}
                       height={44}
                       unoptimized
@@ -64,7 +67,7 @@ export default async function MessagesPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold truncate">{conversation.user!.name}</p>
+                      <p className="font-semibold truncate">{conversation.user.name}</p>
                       {conversation.unreadCount > 0 && (
                         <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-teal-600 text-sandstone text-xs font-medium px-1.5">
                           {conversation.unreadCount > 99 ? "99+" : conversation.unreadCount}
