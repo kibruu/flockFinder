@@ -14,6 +14,7 @@ export interface TripListItem {
   hotspot: { id: string; name: string; locationName: string; latitude: number; longitude: number; coverImage: string | null } | null;
   rsvpCount: number;
   carpoolCount: number;
+  openSeats?: number;
 }
 
 export interface TripDetail {

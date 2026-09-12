@@ -54,6 +54,7 @@ async function getTrips(searchParams: SearchParams) {
         host: { select: { id: true, name: true, avatarUrl: true } },
         hotspot: { select: { id: true, name: true, locationName: true, latitude: true, longitude: true, coverImage: true } },
         _count: { select: { rsvps: true, carpoolOffers: true } },
+        carpoolOffers: { select: { availableSeats: true } },
       },
       orderBy: { date: "asc" },
       skip: (page - 1) * limit,
@@ -100,6 +101,7 @@ async function getTrips(searchParams: SearchParams) {
     hotspot: trip.hotspot,
     rsvpCount: trip._count.rsvps,
     carpoolCount: trip._count.carpoolOffers,
+    openSeats: trip.carpoolOffers.reduce((sum, offer) => sum + offer.availableSeats, 0),
   }));
 
   return {

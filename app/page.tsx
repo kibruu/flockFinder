@@ -1,15 +1,18 @@
 import Link from "next/link";
-import { Bird, CalendarDays, Car, Compass, PlusCircle, ArrowRight } from "lucide-react";
+import { Bird, CalendarDays, Car, Compass, ArrowRight } from "lucide-react";
 import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { TripCard } from "@/components/TripCard";
 import { LiveTicker } from "@/components/LiveTicker";
 import { HeroSceneSelector } from "@/components/hero-scene-selector";
+import { QuickActions } from "@/components/QuickActions";
 import type { TripListItem } from "@/types/trip";
 import { parseTripStatus } from "@/types/domain";
 import { finalizeExpiredTrips } from "@/lib/trip-status";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
@@ -73,6 +76,7 @@ async function getUpcomingTrips(): Promise<TripListItem[]> {
         },
       },
       _count: { select: { rsvps: true, carpoolOffers: true } },
+      carpoolOffers: { select: { availableSeats: true } },
     },
     orderBy: { date: "asc" },
     take: 6,
@@ -116,6 +120,7 @@ async function getUpcomingTrips(): Promise<TripListItem[]> {
     hotspot: trip.hotspot,
     rsvpCount: trip._count.rsvps,
     carpoolCount: trip._count.carpoolOffers,
+    openSeats: trip.carpoolOffers.reduce((sum, offer) => sum + offer.availableSeats, 0),
   }));
 }
 
@@ -216,38 +221,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-7xl px-4 py-10">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <Link
-            href="/trips"
-            className="group flex items-center justify-between rounded-xl border border-sage/20 bg-sandstone dark:bg-forest-deep p-5 shadow-sm transition-colors hover:border-teal/50"
-          >
-            <div className="flex items-center gap-3">
-              <PlusCircle className="h-5 w-5 text-teal" />
-              <span className="font-medium text-forest-deep dark:text-sandstone">Host an Outing</span>
-            </div>
-            <ArrowRight className="h-4 w-4 text-gray-400 transition-transform group-hover:translate-x-1" />
-          </Link>
-          <Link
-            href="/trips?hasOpenSeats=true"
-            className="group flex items-center justify-between rounded-xl border border-sage/20 bg-sandstone dark:bg-forest-deep p-5 shadow-sm transition-colors hover:border-teal/50"
-          >
-            <div className="flex items-center gap-3">
-              <Car className="h-5 w-5 text-teal" />
-              <span className="font-medium text-forest-deep dark:text-sandstone">Find a Ride</span>
-            </div>
-            <ArrowRight className="h-4 w-4 text-forest-mid dark:text-sandstone/40 transition-transform group-hover:translate-x-1" />
-          </Link>
-          <Link
-            href="/map"
-            className="group flex items-center justify-between rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-5 shadow-sm transition-colors hover:border-teal-500/50"
-          >
-            <div className="flex items-center gap-3">
-              <Compass className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-              <span className="font-medium text-forest-deep dark:text-sandstone">Explore the Field Map</span>
-            </div>
-            <ArrowRight className="h-4 w-4 text-forest-mid dark:text-sandstone/40 transition-transform group-hover:translate-x-1" />
-          </Link>
-        </div>
+        <QuickActions />
       </section>
 
       <section className="mx-auto max-w-7xl px-4 pb-10">
